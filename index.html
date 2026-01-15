@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="vi" x-data="appData()" :class="{ 'dark': darkMode }" :style="'--theme-color: ' + currentThemeColor">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Garden Pro | Cloud Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0fdfa', 100: '#ccfbf1', 500: 'var(--theme-color)', 
+                            600: 'var(--theme-color)', 700: 'var(--theme-color)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        :root { --theme-color: #0d9488; --theme-rgb: 13, 148, 136; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--theme-color); border-radius: 10px; opacity: 0.5; }
+        .glass-effect { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .markdown-content img { border-radius: 1rem; margin: 1rem 0; }
+        .dynamic-shadow { shadow-color: var(--theme-color); }
+        .note-card:hover { border-color: var(--theme-color); box-shadow: 0 20px 25px -5px rgba(var(--theme-rgb), 0.1); }
+        /* Loading overlay */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--theme-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-500 min-h-screen font-sans">
+
+    <div x-show="isLoading" class="fixed inset-0 z-[60] bg-white dark:bg-slate-950 flex items-center justify-center transition-opacity">
+        <div class="loader"></div>
+    </div>
+
+    <header class="sticky top-0 z-40 w-full border-b border-teal-100 dark:border-slate-800 bg-white/70 dark:bg-slate-950/80 glass-effect">
+        <div class="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4 group cursor-pointer" @click="resetFilters()">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-primary-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                    <svg class="w-10 h-10 relative z-10 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 22c1.25-1.5 2.5-1.5 3.75 0 1.25 1.5 2.5 1.5 3.75 0 1.25-1.5 2.5-1.5 3.75 0 1.25-1.5 2.5-1.5 3.75 0"/>
+                        <path d="M7 10c0-3 2.5-6 5-6s5 3 5 6-2.5 6-5 6-5-3-5-6Z"/>
+                        <path d="M12 4v12"/>
+                        <path d="m9 7 6 6"/>
+                        <path d="m15 7-6 6"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-tighter text-slate-900 dark:text-white leading-none">HIHI<span class="text-primary-600">CLOUD</span></h1>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">Cloud lưu trữ cá nhân</span>
+                </div>
+            </div>
+
+            <div class="hidden lg:flex flex-1 max-w-xl mx-12">
+                <div class="relative w-full group">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary-600"></i>
+                    <input type="text" x-model="searchQuery" 
+                        class="w-full pl-11 pr-4 py-2.5 bg-slate-100 dark:bg-slate-900 border-2 border-transparent focus:border-primary-500/50 rounded-2xl outline-none transition-all text-sm" 
+                        placeholder="Tìm kiếm tài liệu...">
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button @click="toggleLock()" :class="isUnlocked ? 'text-primary-600 bg-primary-50' : 'text-slate-400 bg-slate-100'" class="p-2.5 rounded-xl transition-all">
+                    <i :data-lucide="isUnlocked ? 'unlock' : 'lock'" class="w-5 h-5"></i>
+                </button>
+                <button @click="darkMode = !darkMode" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
+                    <i x-show="!darkMode" data-lucide="moon" class="w-5 h-5"></i>
+                    <i x-show="darkMode" data-lucide="sun" class="w-5 h-5"></i>
+                </button>
+                <template x-if="isUnlocked">
+                    <button @click="openAddModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-primary-500/20 active:scale-95 ml-2">
+                        <i data-lucide="plus" class="w-4 h-4 text-white"></i>
+                        <span class="font-bold text-sm hidden sm:inline text-white">Tạo</span>
+                    </button>
+                </template>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[1600px] mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <aside class="lg:col-span-3 space-y-6">
+           <div class="p-6 rounded-[2rem] bg-gradient-to-br from-teal-800 to-teal-950 text-white shadow-xl relative overflow-hidden group">
+                <div class="absolute inset-0 opacity-10" :style="'background-color:' + currentThemeColor"></div>
+                <h3 class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-4">Trạng thái máy chủ</h3>
+                <div class="flex gap-8 relative z-10">
+                    <div>
+                        <div class="text-3xl font-black" x-text="notes.length"></div>
+                        <div class="text-[9px] font-bold opacity-50 uppercase">Hạt giống</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-black" x-text="categories.length"></div>
+                        <div class="text-[9px] font-bold opacity-50 uppercase">Khu vực</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900/50 rounded-[2rem] p-6 border border-slate-200 dark:border-slate-800">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Cấu trúc phân tầng</h3>
+                    <template x-if="isUnlocked">
+                        <button @click="showCatModal = true" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
+                            <i data-lucide="folder-plus" class="w-4 h-4 text-slate-400"></i>
+                        </button>
+                    </template>
+                </div>
+                
+                <nav class="space-y-1">
+                    <button @click="resetFilters()" 
+                        :class="activeCategory === '' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'"
+                        class="w-full flex items-center px-4 py-3 rounded-xl text-sm font-bold transition-all mb-4">
+                        <span :class="activeCategory === '' ? 'text-white' : ''">🌈 Tất cả dữ liệu</span>
+                    </button>
+
+                    <template x-for="cat in categories" :key="cat.id">
+                        <div class="mb-4">
+                            <div @click="activeCategory = cat.name; activeSubCategory = ''"
+                                :style="activeCategory === cat.name ? `background-color: ${cat.color}20; color: ${cat.color}` : ''"
+                                :class="activeCategory === cat.name ? 'font-black' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'"
+                                class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm cursor-pointer transition-all">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-2 h-2 rounded-full" :style="'background-color:' + cat.color"></div>
+                                    <span x-text="cat.name"></span>
+                                </div>
+                                <span class="text-[10px] opacity-50" x-text="countNotesInParent(cat.name)"></span>
+                            </div>
+                            
+                            <div class="ml-4 border-l border-slate-200 dark:border-slate-800 pl-2 mt-1 space-y-0.5" x-show="activeCategory === cat.name || !activeCategory">
+                                <template x-for="sub in cat.subs" :key="sub">
+                                    <button @click="activeCategory = cat.name; activeSubCategory = sub"
+                                        :style="activeSubCategory === sub ? `color: ${cat.color}` : ''"
+                                        :class="activeSubCategory === sub ? 'bg-white dark:bg-slate-800 font-bold shadow-sm' : 'text-slate-400 hover:text-slate-600'"
+                                        class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all">
+                                        <span x-text="sub"></span>
+                                        <span class="text-[9px] opacity-40" x-text="countNotes(cat.name, sub)"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </nav>
+            </div>
+        </aside>
+
+        <section class="lg:col-span-9">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                        <span x-text="activeCategory || 'Toàn bộ dữ liệu'"></span>
+                        <div x-show="activeCategory" class="w-3 h-3 rounded-full animate-pulse" :style="'background-color:' + currentThemeColor"></div>
+                    </h2>
+                    <p x-show="activeSubCategory" class="text-sm mt-1 font-medium opacity-60" :style="'color:' + currentThemeColor">
+                        Chủ đề: <span x-text="activeSubCategory"></span>
+                    </p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-tighter" x-text="filteredNotes.length + ' kết quả tìm thấy'"></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <template x-for="note in filteredNotes" :key="note.id">
+                    <div class="note-card group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col relative"
+                        :style="activeCategory ? `border-bottom: 4px solid ${currentThemeColor}` : ''">
+                        
+                        <template x-if="!note.isPublic && !isUnlocked">
+                            <div class="absolute inset-0 z-10 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+                                <i data-lucide="lock" class="w-8 h-8 text-slate-400 mb-2"></i>
+                                <p class="text-xs font-bold text-slate-500 uppercase">Nội dung riêng tư</p>
+                                <button @click="toggleLock()" class="mt-4 text-[10px] font-black text-primary-600 underline">NHẬP MẬT KHẨU</button>
+                            </div>
+                        </template>
+
+                        <template x-if="note.image">
+                            <div class="h-40 w-full overflow-hidden">
+                                <img :src="note.image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            </div>
+                        </template>
+                        
+                        <div class="p-6 flex flex-col flex-1">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-wider rounded-lg" 
+                                    x-text="note.category + ' › ' + note.subCategory"></span>
+                                
+                                <div class="flex gap-1" x-show="isUnlocked">
+                                    <button @click="editNote(note)" class="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500 rounded-lg transition-all">
+                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button @click="deleteNote(note.id)" class="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition-all">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <h3 class="text-lg font-black mb-3 text-slate-800 dark:text-white group-hover:text-primary-600 transition-colors leading-tight" x-text="note.title"></h3>
+                            <div class="text-slate-500 dark:text-slate-400 text-xs leading-relaxed mb-6 line-clamp-3 markdown-content" x-html="marked.parse(note.content)"></div>
+                            
+                            <div class="mt-auto pt-4 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between">
+                                <div class="flex gap-2">
+                                    <template x-for="tag in note.tags" :key="tag">
+                                        <span class="text-[9px] font-bold text-primary-600/60" x-text="'#' + tag"></span>
+                                    </template>
+                                </div>
+                                <span class="text-[9px] font-bold text-slate-300" x-text="formatDate(note.createdAt)"></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div x-show="filteredNotes.length === 0 && !isLoading" class="text-center py-40 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[3rem]">
+                <i data-lucide="database-zap" class="w-12 h-12 mx-auto text-slate-200 dark:text-slate-800 mb-4"></i>
+                <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">Chưa có tài liệu...</p>
+            </div>
+        </section>
+    </main>
+
+    <div x-show="showAddModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div @click.away="showAddModal = false" class="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
+            <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="text-2xl font-black text-slate-800 dark:text-white" x-text="isEditing ? 'Cập nhật tri thức' : 'Gieo mầm tri thức mới'"></h3>
+                <button @click="showAddModal = false" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition"><i data-lucide="x"></i></button>
+            </div>
+            
+            <div class="p-8 space-y-6 overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Tiêu đề</label>
+                            <input type="text" x-model="newNote.title" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none outline-none font-bold text-slate-800 dark:text-white">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Khu vực</label>
+                                <select x-model="newNote.category" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none outline-none font-bold text-sm">
+                                    <template x-for="cat in categories" :key="cat.id">
+                                        <option :value="cat.name" x-text="cat.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Chủ đề con</label>
+                                <select x-model="newNote.subCategory" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none outline-none font-bold text-sm">
+                                    <template x-for="sub in getAvailableSubs(newNote.category)" :key="sub">
+                                        <option :value="sub" x-text="sub"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Hình ảnh minh họa</label>
+                        <label class="w-full h-40 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary-500 transition-all overflow-hidden relative">
+                            <template x-if="!newNote.image">
+                                <div class="text-center p-4">
+                                    <i data-lucide="image-plus" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Tải ảnh lên</span>
+                                </div>
+                            </template>
+                            <template x-if="newNote.image">
+                                <img :src="newNote.image" class="w-full h-full object-cover">
+                            </template>
+                            <input type="file" @change="handleFileUpload" class="hidden" accept="image/*">
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Nội dung (Markdown)</label>
+                    <textarea x-model="newNote.content" rows="6" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none outline-none resize-none text-sm dark:text-slate-200" placeholder="# Viết gì đó..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Thẻ phân loại (cách nhau dấu phẩy)</label>
+                        <input type="text" x-model="newNote.tagsInput" placeholder="vd: ykhoa, tim-mach" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none text-sm outline-none">
+                    </div>
+                    <div class="flex items-end">
+                        <button @click="newNote.isPublic = !newNote.isPublic" 
+                            :class="newNote.isPublic ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-slate-700 shadow-slate-700/20'"
+                            class="w-full p-4 rounded-2xl text-white text-xs font-black transition-all flex items-center justify-center gap-3 shadow-lg">
+                            <i :data-lucide="newNote.isPublic ? 'globe' : 'eye-off'" class="w-4 h-4 text-white"></i>
+                            <span class="text-white" x-text="newNote.isPublic ? 'CHẾ ĐỘ CÔNG KHAI' : 'CHẾ ĐỘ RIÊNG TƯ'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-4">
+                <button @click="showAddModal = false" class="px-6 py-3 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Hủy bỏ</button>
+                <button @click="saveNote()" class="bg-primary-600 hover:bg-primary-700 text-white px-10 py-4 rounded-2xl font-black shadow-xl transition-all hover:-translate-y-1 uppercase text-xs">
+                    <span x-text="isLoading ? 'Đang lưu...' : 'Xác nhận lưu'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="showCatModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm">
+        <div @click.away="showCatModal = false" class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="p-8 border-b border-slate-100 dark:border-slate-800">
+                <h3 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Quản lý</h3>
+            </div>
+            
+            <div class="p-8 overflow-y-auto space-y-6">
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem] space-y-4">
+                    <label class="text-[10px] font-black uppercase text-primary-600 block">Thêm khu vực & Mã màu</label>
+                    <div class="flex gap-3">
+                        <input type="text" x-model="newCatName" placeholder="Tên khu vực (vd: 🏥 Nội khoa)" class="flex-1 bg-white dark:bg-slate-800 p-3 rounded-xl border-none outline-none font-bold text-sm">
+                        <input type="color" x-model="newCatColor" class="w-12 h-12 p-1 bg-white dark:bg-slate-800 rounded-xl border-none cursor-pointer">
+                        <button @click="addCategory()" class="bg-primary-600 text-white px-6 rounded-xl font-black text-[10px] uppercase text-white">Thêm</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <template x-for="cat in categories" :key="cat.id">
+                        <div class="border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-primary-500/30 transition-colors">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-4 h-4 rounded-full shadow-sm" :style="'background-color:' + cat.color"></div>
+                                    <span class="font-black text-slate-800 dark:text-white" x-text="cat.name"></span>
+                                </div>
+                                <button @click="deleteCategory(cat.id)" class="text-slate-300 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
+                            
+                            <div class="ml-7 space-y-2">
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="(sub, index) in cat.subs" :key="index">
+                                        <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 py-1.5 px-3 rounded-lg">
+                                            <span class="text-[10px] font-bold" x-text="sub"></span>
+                                            <button @click="deleteSubCategory(cat.id, sub)" class="text-slate-400 hover:text-red-500"><i data-lucide="x" class="w-3 h-3"></i></button>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <div class="flex gap-2 mt-4">
+                                    <input type="text" :id="'newsub-'+cat.id" placeholder="Thêm chủ đề con..." class="flex-1 bg-slate-50 dark:bg-slate-950 p-2 px-4 rounded-xl border-none text-[10px] outline-none font-bold">
+                                    <button @click="addSubCategory(cat.id, document.getElementById('newsub-'+cat.id).value); document.getElementById('newsub-'+cat.id).value=''" 
+                                        class="bg-slate-800 text-white px-4 rounded-xl text-[9px] font-black uppercase text-white">Thêm</button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <button @click="showCatModal = false" class="m-8 mt-0 py-4 bg-slate-100 dark:bg-slate-800 rounded-2xl font-black text-slate-500 text-[10px] uppercase tracking-widest hover:bg-primary-600 hover:text-white transition-all">Hoàn tất thiết lập</button>
+        </div>
+    </div>
+
+    <script>
+        // CẤU HÌNH SERVER URL CỦA BẠN TẠI ĐÂY
+        const SERVER_URL = 'https://luuhihi.ngxuanhai123.workers.dev'; 
+
+        function appData() {
+            return {
+                darkMode: false,
+                isLoading: false,
+                isUnlocked: false,
+                userPassword: '', // Lưu password tạm thời trong phiên
+                showAddModal: false,
+                showCatModal: false,
+                searchQuery: '',
+                activeCategory: '',
+                activeSubCategory: '',
+                isEditing: false,
+                currentEditId: null,
+                newCatName: '',
+                newCatColor: '#0d9488',
+                
+                categories: [],
+                notes: [],
+                newNote: { title: '', category: '', subCategory: '', content: '', image: null, tagsInput: '', isPublic: true },
+
+                init() {
+                    this.isLoading = true;
+                    this.loadData();
+                    this.$watch('newNote.category', val => {
+                        const cat = this.categories.find(c => c.name === val);
+                        this.newNote.subCategory = (cat && cat.subs.length > 0) ? cat.subs[0] : '';
+                    });
+                    this.$watch('currentThemeColor', val => {
+                        document.documentElement.style.setProperty('--theme-color', val);
+                        document.documentElement.style.setProperty('--theme-rgb', this.hexToRgb(val));
+                    });
+                    this.refreshIcons();
+                },
+
+                hexToRgb(hex) {
+                    hex = hex.replace('#', '');
+                    const r = parseInt(hex.substring(0,2), 16);
+                    const g = parseInt(hex.substring(2,4), 16);
+                    const b = parseInt(hex.substring(4,6), 16);
+                    return `${r}, ${g}, ${b}`;
+                },
+
+                get currentThemeColor() {
+                    if (this.activeCategory) {
+                        const cat = this.categories.find(c => c.name === this.activeCategory);
+                        return cat ? cat.color : '#0d9488';
+                    }
+                    return '#0d9488';
+                },
+
+                // --- API HELPERS ---
+                async fetchAPI(endpoint, method = 'GET', body = null) {
+                    try {
+                        const options = {
+                            method,
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': this.userPassword // Gửi password để xác thực
+                            }
+                        };
+                        if (body) options.body = JSON.stringify(body);
+                        
+                        const response = await fetch(`${SERVER_URL}${endpoint}`, options);
+                        if (!response.ok) throw new Error(response.statusText);
+                        return await response.json();
+                    } catch (error) {
+                        console.error("API Error:", error);
+                        alert("Lỗi kết nối Server: " + error.message);
+                        return null;
+                    }
+                },
+
+                async loadData() {
+                    this.isLoading = true;
+                    try {
+                        // Gọi endpoint công khai lấy dữ liệu
+                        const response = await fetch(`${SERVER_URL}/data`);
+                        const data = await response.json();
+                        if (data) {
+                            this.notes = data.notes || [];
+                            this.categories = data.categories || [];
+                        }
+                    } catch (e) {
+                        console.error("Failed to load data", e);
+                    } finally {
+                        this.isLoading = false;
+                        this.refreshIcons();
+                    }
+                },
+
+                async toggleLock() {
+                    if (this.isUnlocked) {
+                        this.isUnlocked = false;
+                        this.userPassword = '';
+                        return;
+                    }
+
+                    const pass = prompt("Nhập mật khẩu truy cập:");
+                    if (!pass) return;
+
+                    try {
+                        const response = await fetch(`${SERVER_URL}/check`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password: pass })
+                        });
+
+                        const result = await response.json();
+                        if (result.success) {
+                            this.isUnlocked = true;
+                            this.userPassword = pass; // Lưu pass để dùng cho các request sau
+                            alert("Mở khóa thành công!");
+                        } else {
+                            alert("Mật khẩu không chính xác!");
+                        }
+                    } catch (error) {
+                        alert("Lỗi kết nối server!");
+                    }
+                },
+
+                async saveNote() {
+                    if (!this.newNote.title || !this.newNote.content) return alert("Vui lòng nhập đủ thông tin!");
+                    this.isLoading = true;
+
+                    const noteData = {
+                        id: this.isEditing ? this.currentEditId : crypto.randomUUID(), // Dùng UUID cho ID
+                        title: this.newNote.title,
+                        category: this.newNote.category,
+                        subCategory: this.newNote.subCategory,
+                        content: this.newNote.content,
+                        image: this.newNote.image,
+                        isPublic: this.newNote.isPublic,
+                        tags: this.newNote.tagsInput.split(',').map(t => t.trim()).filter(t => t),
+                        createdAt: this.isEditing ? this.notes.find(n => n.id === this.currentEditId).createdAt : new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+
+                    const result = await this.fetchAPI('/note', 'POST', noteData);
+                    
+                    if (result && result.success) {
+                        await this.loadData(); // Reload lại dữ liệu từ server
+                        this.showAddModal = false;
+                    }
+                    this.isLoading = false;
+                },
+
+                async deleteNote(id) {
+                    if (confirm('Xóa vĩnh viễn ghi chú này?')) {
+                        this.isLoading = true;
+                        const result = await this.fetchAPI(`/note/${id}`, 'DELETE');
+                        if (result && result.success) {
+                            this.notes = this.notes.filter(n => n.id !== id);
+                        }
+                        this.isLoading = false;
+                    }
+                },
+
+                async addCategory() {
+                    if (this.newCatName && !this.categories.find(c => c.name === this.newCatName)) {
+                        this.isLoading = true;
+                        const newCat = {
+                            id: crypto.randomUUID(),
+                            name: this.newCatName,
+                            color: this.newCatColor,
+                            subs: []
+                        };
+                        const result = await this.fetchAPI('/category', 'POST', newCat);
+                        if (result && result.success) {
+                            this.categories.push(newCat);
+                            this.newCatName = '';
+                        }
+                        this.isLoading = false;
+                    }
+                },
+
+                async deleteCategory(id) {
+                    if (confirm('Xóa thư mục này?')) {
+                        this.isLoading = true;
+                        const result = await this.fetchAPI(`/category/${id}`, 'DELETE');
+                        if (result && result.success) {
+                            this.categories = this.categories.filter(c => c.id !== id);
+                        }
+                        this.isLoading = false;
+                    }
+                },
+
+                async saveCategoryUpdate(cat) {
+                    // Helper function để update subcategories
+                    await this.fetchAPI('/category', 'POST', cat);
+                },
+
+                async addSubCategory(catId, subName) {
+                    if (!subName) return;
+                    const cat = this.categories.find(c => c.id === catId);
+                    if (cat && !cat.subs.includes(subName)) {
+                        cat.subs.push(subName);
+                        await this.saveCategoryUpdate(cat); // Lưu lên server
+                    }
+                },
+
+                async deleteSubCategory(catId, subName) {
+                    const cat = this.categories.find(c => c.id === catId);
+                    if (cat) {
+                        cat.subs = cat.subs.filter(s => s !== subName);
+                        await this.saveCategoryUpdate(cat); // Lưu lên server
+                    }
+                },
+
+                // --- UI HELPERS ---
+                refreshIcons() { setTimeout(() => lucide.createIcons(), 100); },
+                get filteredNotes() {
+                    let result = this.notes.filter(note => {
+                        const matchSearch = note.title.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+                                          note.content.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        const matchCat = this.activeCategory ? note.category === this.activeCategory : true;
+                        const matchSub = this.activeSubCategory ? note.subCategory === this.activeSubCategory : true;
+                        return matchSearch && matchCat && matchSub;
+                    });
+                    return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                },
+                getAvailableSubs(catName) {
+                    const cat = this.categories.find(c => c.name === catName);
+                    return cat ? cat.subs : [];
+                },
+                openAddModal() {
+                    if(!this.isUnlocked) return alert("Vui lòng mở khóa để đăng bài!");
+                    this.isEditing = false;
+                    this.resetNewNote();
+                    this.showAddModal = true;
+                    this.refreshIcons();
+                },
+                handleFileUpload(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // Lưu ý: Lưu ảnh base64 vào D1 có thể nặng. Tốt nhất nên dùng R2, nhưng ở đây demo lưu tạm vào D1.
+                        const reader = new FileReader();
+                        reader.onload = (event) => this.newNote.image = event.target.result;
+                        reader.readAsDataURL(file);
+                    }
+                },
+                editNote(note) {
+                    this.isEditing = true;
+                    this.currentEditId = note.id;
+                    this.newNote = {
+                        title: note.title,
+                        category: note.category,
+                        subCategory: note.subCategory,
+                        content: note.content,
+                        image: note.image,
+                        isPublic: note.isPublic,
+                        tagsInput: note.tags.join(', ')
+                    };
+                    this.showAddModal = true;
+                    this.refreshIcons();
+                },
+                resetNewNote() {
+                    const firstCat = this.categories[0];
+                    this.newNote = { 
+                        title: '', 
+                        category: firstCat ? firstCat.name : '', 
+                        subCategory: (firstCat && firstCat.subs.length > 0) ? firstCat.subs[0] : '',
+                        content: '', image: null, tagsInput: '', isPublic: true 
+                    };
+                },
+                resetFilters() { this.activeCategory = ''; this.activeSubCategory = ''; this.searchQuery = ''; },
+                countNotes(cat, sub) { return this.notes.filter(n => n.category === cat && n.subCategory === sub).length; },
+                countNotesInParent(cat) { return this.notes.filter(n => n.category === cat).length; },
+                formatDate(date) { return new Date(date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+            }
+        }
+    </script>
+</body>
+</html>
