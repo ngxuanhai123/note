@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Garden Pro | Cloud Edition</title>
+    <title>Digital Garden Pro v2.1 | Smart Sync & Cloud</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -19,6 +19,20 @@
                             50: '#f0fdfa', 100: '#ccfbf1', 500: 'var(--theme-color)', 
                             600: 'var(--theme-color)', 700: 'var(--theme-color)',
                         }
+                    },
+                    animation: {
+                        'slide-in': 'slideIn 0.3s ease-out forwards',
+                        'fade-out': 'fadeOut 0.3s ease-in forwards',
+                    },
+                    keyframes: {
+                        slideIn: {
+                            '0%': { transform: 'translateX(100%)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        },
+                        fadeOut: {
+                            '0%': { opacity: '1' },
+                            '100%': { opacity: '0' },
+                        }
                     }
                 }
             }
@@ -27,54 +41,97 @@
     <style>
         [x-cloak] { display: none !important; }
         :root { --theme-color: #0d9488; --theme-rgb: 13, 148, 136; }
-        ::-webkit-scrollbar { width: 8px; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--theme-color); border-radius: 10px; opacity: 0.5; }
+        ::-webkit-scrollbar-thumb:hover { opacity: 1; }
+        
         .glass-effect { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-        .markdown-content img { border-radius: 1rem; margin: 1rem 0; }
-        .dynamic-shadow { shadow-color: var(--theme-color); }
-        .note-card:hover { border-color: var(--theme-color); box-shadow: 0 20px 25px -5px rgba(var(--theme-rgb), 0.1); }
-        /* Loading overlay */
+        
+        /* Hide scrollbar for sidebar but keep functionality */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .markdown-content img { border-radius: 1rem; margin: 1.5rem 0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); width: 100%; object-fit: cover; }
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 { font-weight: 900; margin-top: 1.5em; margin-bottom: 0.5em; line-height: 1.2; }
+        .markdown-content h1 { font-size: 1.5rem; }
+        .markdown-content h2 { font-size: 1.25rem; }
+        .markdown-content p { margin-bottom: 1em; line-height: 1.7; }
+        .markdown-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1em; }
+        .markdown-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1em; }
+        .markdown-content blockquote { border-left: 4px solid var(--theme-color); padding-left: 1rem; font-style: italic; color: #64748b; margin: 1.5rem 0; }
+        .markdown-content pre { background: #1e293b; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; color: #e2e8f0; margin-bottom: 1rem; }
+        .markdown-content code { background: rgba(0,0,0,0.05); padding: 0.2em 0.4em; border-radius: 0.25em; font-size: 0.9em; font-family: monospace; }
+        .dark .markdown-content code { background: rgba(255,255,255,0.1); }
+
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--theme-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-500 min-h-screen font-sans">
+<body class="bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-500 min-h-screen font-sans flex flex-col">
 
-    <div x-show="isLoading" class="fixed inset-0 z-[60] bg-white dark:bg-slate-950 flex items-center justify-center transition-opacity">
-        <div class="loader"></div>
+    <div class="fixed top-24 right-6 z-[110] flex flex-col gap-3 pointer-events-none">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div class="pointer-events-auto bg-white dark:bg-slate-800 shadow-xl rounded-xl p-4 flex items-center gap-3 border-l-4 min-w-[300px] animate-slide-in"
+                 :class="toast.type === 'success' ? 'border-emerald-500' : 'border-red-500'">
+                <div class="p-2 rounded-full" :class="toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'">
+                    <i :data-lucide="toast.type === 'success' ? 'check' : 'alert-circle'" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm" x-text="toast.type === 'success' ? 'Thành công' : 'Lỗi'"></h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400" x-text="toast.message"></p>
+                </div>
+            </div>
+        </template>
     </div>
 
-    <header class="sticky top-0 z-40 w-full border-b border-teal-100 dark:border-slate-800 bg-white/70 dark:bg-slate-950/80 glass-effect">
-        <div class="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
-            <div class="flex items-center gap-4 group cursor-pointer" @click="resetFilters()">
-                <div class="relative">
-                    <div class="absolute inset-0 bg-primary-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                    <svg class="w-10 h-10 relative z-10 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M2 22c1.25-1.5 2.5-1.5 3.75 0 1.25 1.5 2.5 1.5 3.75 0 1.25-1.5 2.5-1.5 3.75 0 1.25-1.5 2.5-1.5 3.75 0"/>
-                        <path d="M7 10c0-3 2.5-6 5-6s5 3 5 6-2.5 6-5 6-5-3-5-6Z"/>
-                        <path d="M12 4v12"/>
-                        <path d="m9 7 6 6"/>
-                        <path d="m15 7-6 6"/>
+    <div x-show="isLoading" class="fixed inset-0 z-[100] bg-white/80 dark:bg-slate-950/80 flex items-center justify-center transition-opacity backdrop-blur-sm" x-transition>
+        <div class="flex flex-col items-center gap-4">
+            <div class="loader"></div>
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest" x-text="loadingText">Đang xử lý...</span>
+        </div>
+    </div>
+
+    <header class="sticky top-0 z-50 w-full border-b border-teal-100 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 glass-effect supports-[backdrop-filter]:bg-white/60">
+        <div class="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between gap-4">
+            
+            <div class="flex items-center gap-4 group cursor-pointer flex-shrink-0" @click="resetFilters()">
+                <div class="relative w-10 h-10 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-primary-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
+                    <svg class="w-8 h-8 relative z-10 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-xl font-black tracking-tighter text-slate-900 dark:text-white leading-none">HIHI<span class="text-primary-600">CLOUD</span></h1>
-                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">Cloud lưu trữ cá nhân</span>
+                    <h1 class="text-xl font-black tracking-tighter text-slate-900 dark:text-white leading-none">HIHI<span class="text-primary-600">NOTE</span></h1>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">Kho lưu trữ cá nhân</span>
                 </div>
             </div>
 
-            <div class="hidden lg:flex flex-1 max-w-xl mx-12">
+            <div class="hidden lg:flex flex-1 max-w-2xl px-8">
                 <div class="relative w-full group">
-                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary-600"></i>
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary-600 transition-colors"></i>
                     <input type="text" x-model="searchQuery" 
-                        class="w-full pl-11 pr-4 py-2.5 bg-slate-100 dark:bg-slate-900 border-2 border-transparent focus:border-primary-500/50 rounded-2xl outline-none transition-all text-sm" 
-                        placeholder="Tìm kiếm tài liệu...">
+                        class="w-full pl-11 pr-4 py-3 bg-slate-100 dark:bg-slate-900 border-2 border-transparent focus:border-primary-500/50 rounded-2xl outline-none transition-all text-sm font-medium shadow-inner" 
+                        placeholder="Tìm kiếm tài liệu, ý tưởng, thẻ...">
                 </div>
             </div>
 
-            <div class="flex items-center gap-2">
-                <button @click="toggleLock()" :class="isUnlocked ? 'text-primary-600 bg-primary-50' : 'text-slate-400 bg-slate-100'" class="p-2.5 rounded-xl transition-all">
+            <div class="flex items-center gap-3 flex-shrink-0">
+                <div class="flex items-center mr-2 border-r border-slate-200 dark:border-slate-800 pr-4 gap-1">
+                    <button @click="exportData()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 transition-colors" title="Sao lưu (Export JSON)">
+                        <i data-lucide="download" class="w-5 h-5"></i>
+                    </button>
+                    <label class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 cursor-pointer transition-colors" title="Khôi phục (Import JSON)">
+                        <i data-lucide="upload" class="w-5 h-5"></i>
+                        <input type="file" class="hidden" accept=".json" @change="importData($event)">
+                    </label>
+                </div>
+
+                <button @click="handleLockAction()" :class="isUnlocked ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/20' : 'text-slate-400 bg-slate-100 dark:bg-slate-800'" class="p-2.5 rounded-xl transition-all" :title="isUnlocked ? 'Bấm để khóa (Đăng xuất)' : 'Bấm để mở khóa'">
                     <i :data-lucide="isUnlocked ? 'unlock' : 'lock'" class="w-5 h-5"></i>
                 </button>
                 <button @click="darkMode = !darkMode" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
@@ -84,21 +141,23 @@
                 <template x-if="isUnlocked">
                     <button @click="openAddModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-primary-500/20 active:scale-95 ml-2">
                         <i data-lucide="plus" class="w-4 h-4 text-white"></i>
-                        <span class="font-bold text-sm hidden sm:inline text-white">Tạo</span>
+                        <span class="font-bold text-sm hidden sm:inline text-white">Tạo mới</span>
                     </button>
                 </template>
             </div>
         </div>
     </header>
 
-    <main class="max-w-[1600px] mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <aside class="lg:col-span-3 space-y-6">
-           <div class="p-6 rounded-[2rem] bg-gradient-to-br from-teal-800 to-teal-950 text-white shadow-xl relative overflow-hidden group">
+    <main class="max-w-[1600px] w-full mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 relative flex-1">
+        
+        <aside class="lg:col-span-3 lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)] lg:overflow-y-auto no-scrollbar flex flex-col gap-6 self-start">
+           
+           <div class="p-6 rounded-[2rem] bg-gradient-to-br from-teal-800 to-teal-950 text-white shadow-2xl relative overflow-hidden group shrink-0">
                 <div class="absolute inset-0 opacity-10" :style="'background-color:' + currentThemeColor"></div>
-                <h3 class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-4">Trạng thái máy chủ</h3>
-                <div class="flex gap-8 relative z-10">
+                <h3 class="text-[10px] font-bold opacity-60 uppercase tracking-widest mb-4">Trạng thái hệ thống</h3>
+                <div class="flex gap-8 relative z-10 mb-4">
                     <div>
-                        <div class="text-3xl font-black" x-text="notes.length"></div>
+                        <div class="text-3xl font-black" x-text="activeNotesCount"></div>
                         <div class="text-[9px] font-bold opacity-50 uppercase">Hạt giống</div>
                     </div>
                     <div>
@@ -106,239 +165,384 @@
                         <div class="text-[9px] font-bold opacity-50 uppercase">Khu vực</div>
                     </div>
                 </div>
+                
+                <div class="border-t border-white/10 pt-3 space-y-2 relative z-10">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full" :class="syncStatus === 'synced' ? 'bg-green-400' : (syncStatus === 'syncing' ? 'bg-yellow-400 animate-pulse' : 'bg-red-400')"></div>
+                            <span class="text-[9px] font-bold uppercase opacity-80">Đồng bộ dữ liệu</span>
+                        </div>
+                        <span class="text-[9px] font-bold opacity-60" x-text="syncStatusText"></span>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full" :class="imgServerStatus === 'online' ? 'bg-blue-400' : 'bg-slate-500'"></div>
+                            <span class="text-[9px] font-bold uppercase opacity-80">Máy chủ ảnh</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 opacity-60">
+                             <i data-lucide="image" class="w-3 h-3"></i>
+                             <span class="text-[9px] font-bold" x-text="imgServerStatus === 'online' ? 'Sẵn sàng' : 'Mất kết nối'"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="bg-white dark:bg-slate-900/50 rounded-[2rem] p-6 border border-slate-200 dark:border-slate-800">
+            <div class="bg-white dark:bg-slate-900/50 rounded-[2rem] p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex-1">
                 <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Cấu trúc phân tầng</h3>
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Điều hướng</h3>
                     <template x-if="isUnlocked">
-                        <button @click="showCatModal = true" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition">
-                            <i data-lucide="folder-plus" class="w-4 h-4 text-slate-400"></i>
+                        <button @click="showCatModal = true" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition text-slate-400 hover:text-primary-600">
+                            <i data-lucide="folder-plus" class="w-4 h-4"></i>
                         </button>
                     </template>
                 </div>
                 
                 <nav class="space-y-1">
                     <button @click="resetFilters()" 
-                        :class="activeCategory === '' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'"
-                        class="w-full flex items-center px-4 py-3 rounded-xl text-sm font-bold transition-all mb-4">
-                        <span :class="activeCategory === '' ? 'text-white' : ''">🌈 Tất cả dữ liệu</span>
+                        :class="(activeCategory === '' && viewMode === 'active') ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'"
+                        class="w-full flex items-center px-4 py-3 rounded-xl text-sm font-bold transition-all mb-4 group">
+                        <span :class="(activeCategory === '' && viewMode === 'active') ? 'text-white' : 'group-hover:text-primary-600'">🌈 Tất cả dữ liệu</span>
                     </button>
 
-                    <template x-for="cat in categories" :key="cat.id">
-                        <div class="mb-4">
-                            <div @click="activeCategory = cat.name; activeSubCategory = ''"
-                                :style="activeCategory === cat.name ? `background-color: ${cat.color}20; color: ${cat.color}` : ''"
-                                :class="activeCategory === cat.name ? 'font-black' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'"
-                                class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm cursor-pointer transition-all">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-2 h-2 rounded-full" :style="'background-color:' + cat.color"></div>
-                                    <span x-text="cat.name"></span>
+                    <div class="space-y-1 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                        <template x-for="cat in categories" :key="cat.id">
+                            <div class="mb-1">
+                                <div @click="setCategoryFilter(cat.name)"
+                                    :style="activeCategory === cat.name ? `background-color: ${cat.color}20; color: ${cat.color}` : ''"
+                                    :class="activeCategory === cat.name ? 'font-black' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'"
+                                    class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm cursor-pointer transition-all">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-2 h-2 rounded-full shadow-sm" :style="'background-color:' + cat.color"></div>
+                                        <span x-text="cat.name" class="truncate"></span>
+                                    </div>
+                                    <span class="text-[10px] opacity-50 font-mono" x-text="countNotesInParent(cat.name)"></span>
                                 </div>
-                                <span class="text-[10px] opacity-50" x-text="countNotesInParent(cat.name)"></span>
+                                
+                                <div class="ml-4 border-l-2 border-slate-100 dark:border-slate-800 pl-2 mt-1 space-y-0.5" x-show="activeCategory === cat.name" x-transition>
+                                    <template x-for="sub in cat.subs" :key="sub">
+                                        <button @click="setSubCategoryFilter(cat.name, sub)"
+                                            :style="activeSubCategory === sub ? `color: ${cat.color}` : ''"
+                                            :class="activeSubCategory === sub ? 'bg-white dark:bg-slate-800 font-bold shadow-sm' : 'text-slate-400 hover:text-slate-600'"
+                                            class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all">
+                                            <span x-text="sub" class="truncate"></span>
+                                            <span class="text-[9px] opacity-40 font-mono" x-text="countNotes(cat.name, sub)"></span>
+                                        </button>
+                                    </template>
+                                </div>
                             </div>
-                            
-                            <div class="ml-4 border-l border-slate-200 dark:border-slate-800 pl-2 mt-1 space-y-0.5" x-show="activeCategory === cat.name || !activeCategory">
-                                <template x-for="sub in cat.subs" :key="sub">
-                                    <button @click="activeCategory = cat.name; activeSubCategory = sub"
-                                        :style="activeSubCategory === sub ? `color: ${cat.color}` : ''"
-                                        :class="activeSubCategory === sub ? 'bg-white dark:bg-slate-800 font-bold shadow-sm' : 'text-slate-400 hover:text-slate-600'"
-                                        class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all">
-                                        <span x-text="sub"></span>
-                                        <span class="text-[9px] opacity-40" x-text="countNotes(cat.name, sub)"></span>
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
+                        </template>
+                    </div>
+
+                    <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800">
+                         <button @click="viewMode = 'trash'; activeCategory = ''; activeSubCategory = ''" 
+                            :class="viewMode === 'trash' ? 'bg-red-50 text-red-600 font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500'"
+                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <span>Thùng rác</span>
+                            <span class="ml-auto text-[9px] opacity-50 bg-slate-200 dark:bg-slate-700 px-1.5 rounded-md font-mono" x-text="trashCount"></span>
+                        </button>
+                    </div>
                 </nav>
             </div>
         </aside>
 
-        <section class="lg:col-span-9">
-            <div class="flex items-center justify-between mb-8">
+        <section class="lg:col-span-9 flex flex-col min-h-[calc(100vh-8rem)]">
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div>
                     <h2 class="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3">
-                        <span x-text="activeCategory || 'Toàn bộ dữ liệu'"></span>
-                        <div x-show="activeCategory" class="w-3 h-3 rounded-full animate-pulse" :style="'background-color:' + currentThemeColor"></div>
+                        <span x-text="viewMode === 'trash' ? 'Thùng rác' : (activeCategory || 'Toàn bộ dữ liệu')"></span>
+                        <div x-show="activeCategory && viewMode !== 'trash'" class="w-3 h-3 rounded-full animate-pulse" :style="'background-color:' + currentThemeColor"></div>
                     </h2>
-                    <p x-show="activeSubCategory" class="text-sm mt-1 font-medium opacity-60" :style="'color:' + currentThemeColor">
-                        Chủ đề: <span x-text="activeSubCategory"></span>
+                    <p x-show="activeSubCategory" class="text-sm mt-1 font-medium opacity-60 flex items-center gap-2" :style="'color:' + currentThemeColor">
+                        <i data-lucide="corner-down-right" class="w-3 h-3"></i>
+                        <span x-text="activeSubCategory"></span>
                     </p>
+                    <p x-show="viewMode === 'trash'" class="text-xs text-red-500 mt-1">Các mục trong thùng rác sẽ tự động bị xóa vĩnh viễn sau 30 ngày.</p>
                 </div>
                 <div class="text-right">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-tighter" x-text="filteredNotes.length + ' kết quả tìm thấy'"></span>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full" x-text="filteredNotes.length + ' kết quả'"></span>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max">
                 <template x-for="note in filteredNotes" :key="note.id">
-                    <div class="note-card group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col relative"
-                        :style="activeCategory ? `border-bottom: 4px solid ${currentThemeColor}` : ''">
+                    <div class="note-card cursor-pointer group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col relative h-full"
+                        :style="activeCategory ? `border-bottom: 4px solid ${currentThemeColor}` : ''"
+                        @click="openReadModal(note)">
                         
                         <template x-if="!note.isPublic && !isUnlocked">
-                            <div class="absolute inset-0 z-10 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
-                                <i data-lucide="lock" class="w-8 h-8 text-slate-400 mb-2"></i>
+                            <div class="absolute inset-0 z-20 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center transition-opacity"
+                                @click.stop>
+                                <div class="bg-white dark:bg-slate-900 p-4 rounded-full shadow-lg mb-3">
+                                    <i data-lucide="lock" class="w-6 h-6 text-slate-400"></i>
+                                </div>
                                 <p class="text-xs font-bold text-slate-500 uppercase">Nội dung riêng tư</p>
-                                <button @click="toggleLock()" class="mt-4 text-[10px] font-black text-primary-600 underline">NHẬP MẬT KHẨU</button>
+                                <button @click="handleLockAction()" class="mt-4 text-[10px] font-black text-primary-600 underline hover:text-primary-700">NHẬP MẬT KHẨU</button>
                             </div>
                         </template>
 
                         <template x-if="note.image">
-                            <div class="h-40 w-full overflow-hidden">
-                                <img :src="note.image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            <div class="h-44 w-full overflow-hidden relative">
+                                <img :src="note.image" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                             </div>
                         </template>
                         
                         <div class="p-6 flex flex-col flex-1">
                             <div class="flex justify-between items-start mb-4">
-                                <span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-wider rounded-lg" 
+                                <span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-wider rounded-lg truncate max-w-[70%]" 
                                     x-text="note.category + ' › ' + note.subCategory"></span>
                                 
-                                <div class="flex gap-1" x-show="isUnlocked">
-                                    <button @click="editNote(note)" class="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500 rounded-lg transition-all">
-                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                                    </button>
-                                    <button @click="deleteNote(note.id)" class="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition-all">
-                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                    </button>
+                                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" x-show="isUnlocked">
+                                    <template x-if="viewMode === 'active'">
+                                        <div class="flex gap-1">
+                                            <button @click.stop="editNote(note)" class="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500 rounded-lg transition-all" title="Chỉnh sửa">
+                                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                            <button @click.stop="softDeleteNote(note.id)" class="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition-all" title="Xóa">
+                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-if="viewMode === 'trash'">
+                                         <div class="flex gap-1">
+                                            <button @click.stop="restoreNote(note.id)" class="p-1.5 hover:bg-emerald-50 text-emerald-500 rounded-lg transition-all" title="Khôi phục">
+                                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                            <button @click.stop="hardDeleteNote(note.id)" class="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-all" title="Xóa vĩnh viễn">
+                                                <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
 
                             <h3 class="text-lg font-black mb-3 text-slate-800 dark:text-white group-hover:text-primary-600 transition-colors leading-tight" x-text="note.title"></h3>
-                            <div class="text-slate-500 dark:text-slate-400 text-xs leading-relaxed mb-6 line-clamp-3 markdown-content" x-html="marked.parse(note.content)"></div>
+                            <div class="text-slate-500 dark:text-slate-400 text-xs leading-relaxed mb-6 line-clamp-3" x-text="stripMarkdown(note.content)"></div>
                             
                             <div class="mt-auto pt-4 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between">
-                                <div class="flex gap-2">
+                                <div class="flex flex-wrap gap-2 max-w-[70%]">
                                     <template x-for="tag in note.tags" :key="tag">
-                                        <span class="text-[9px] font-bold text-primary-600/60" x-text="'#' + tag"></span>
+                                        <span class="text-[9px] font-bold text-primary-600/70 bg-primary-50 dark:bg-primary-900/20 px-1.5 py-0.5 rounded" x-text="'#' + tag"></span>
                                     </template>
                                 </div>
-                                <span class="text-[9px] font-bold text-slate-300" x-text="formatDate(note.createdAt)"></span>
+                                <span class="text-[9px] font-bold text-slate-300 whitespace-nowrap" x-text="formatDate(note.createdAt)"></span>
                             </div>
                         </div>
                     </div>
                 </template>
             </div>
 
-            <div x-show="filteredNotes.length === 0 && !isLoading" class="text-center py-40 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[3rem]">
-                <i data-lucide="database-zap" class="w-12 h-12 mx-auto text-slate-200 dark:text-slate-800 mb-4"></i>
-                <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">Chưa có tài liệu...</p>
+            <div x-show="filteredNotes.length === 0 && !isLoading" class="flex-1 flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[3rem] mt-4">
+                <div class="bg-slate-50 dark:bg-slate-800 p-6 rounded-full mb-4">
+                    <i data-lucide="database-zap" class="w-10 h-10 text-slate-300 dark:text-slate-600"></i>
+                </div>
+                <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">Chưa có dữ liệu...</p>
+                <button x-show="isUnlocked && viewMode === 'active'" @click="openAddModal()" class="mt-4 text-primary-600 text-xs font-bold hover:underline">Tạo ghi chú mới ngay</button>
             </div>
         </section>
     </main>
 
-    <div x-show="showAddModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-        <div @click.away="showAddModal = false" class="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
-            <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                <h3 class="text-2xl font-black text-slate-800 dark:text-white" x-text="isEditing ? 'Cập nhật tri thức' : 'Gieo mầm tri thức mới'"></h3>
-                <button @click="showAddModal = false" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition"><i data-lucide="x"></i></button>
+    <div x-show="showReadModal" x-cloak class="fixed inset-0 z-[60] flex justify-center items-end sm:items-center sm:p-6 bg-slate-900/60 backdrop-blur-md">
+        <div @click.away="showReadModal = false" 
+             x-show="showReadModal"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-10 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             class="bg-white dark:bg-[#0f172a] w-full max-w-5xl h-[95vh] sm:h-[90vh] rounded-t-[2rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden relative border border-slate-200 dark:border-slate-800">
+            
+            <div class="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-start pointer-events-none bg-gradient-to-b from-white via-white/80 to-transparent dark:from-[#0f172a] dark:via-[#0f172a]/80 h-32">
+                <button @click="showReadModal = false" class="pointer-events-auto p-3 bg-white/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 rounded-full backdrop-blur shadow-sm transition-all border border-slate-200/50 dark:border-slate-700/50">
+                    <i data-lucide="x" class="w-5 h-5 text-slate-600 dark:text-slate-300"></i>
+                </button>
+                <template x-if="isUnlocked && selectedNote && viewMode === 'active'">
+                     <div class="flex gap-2 pointer-events-auto">
+                        <button @click="editNote(selectedNote); showReadModal=false" class="flex items-center gap-2 px-4 py-2 bg-blue-50/90 hover:bg-blue-100 text-blue-600 rounded-full backdrop-blur font-bold text-xs transition-colors shadow-sm">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            <span>Chỉnh sửa</span>
+                        </button>
+                    </div>
+                </template>
+            </div>
+
+            <div class="overflow-y-auto flex-1 h-full scroll-smooth" id="reader-content">
+                <template x-if="selectedNote">
+                    <div>
+                        <template x-if="selectedNote.image">
+                            <div class="w-full h-72 sm:h-96 relative">
+                                <img :src="selectedNote.image" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-gradient-to-t from-white dark:from-[#0f172a] via-transparent to-black/10"></div>
+                            </div>
+                        </template>
+                        <template x-if="!selectedNote.image">
+                            <div class="h-32 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-[#0f172a]"></div>
+                        </template>
+
+                        <div class="px-6 sm:px-16 pb-16 max-w-4xl mx-auto -mt-24 relative z-0">
+                            <div class="flex flex-wrap gap-2 mb-6">
+                                <span class="px-3 py-1 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm border border-primary-100 dark:border-primary-900/50" 
+                                    x-text="selectedNote.category"></span>
+                                <span class="px-3 py-1 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm border border-slate-100 dark:border-slate-700" 
+                                    x-text="selectedNote.subCategory"></span>
+                            </div>
+
+                            <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 dark:text-white mb-8 leading-tight tracking-tight" x-text="selectedNote.title"></h1>
+
+                            <div class="flex items-center gap-6 text-xs font-bold text-slate-400 mb-10 pb-8 border-b border-slate-100 dark:border-slate-800">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="calendar" class="w-4 h-4 text-primary-500"></i>
+                                    <span x-text="formatDate(selectedNote.createdAt)"></span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <template x-for="tag in selectedNote.tags" :key="tag">
+                                        <span class="text-primary-600/70" x-text="'#' + tag"></span>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <article class="prose dark:prose-invert prose-slate prose-lg max-w-none markdown-content text-slate-700 dark:text-slate-300" 
+                                     x-html="marked.parse(selectedNote.content || '')">
+                            </article>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="showAddModal" x-cloak class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div @click.away="showAddModal = false" class="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[95vh] flex flex-col">
+            <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900">
+                <h3 class="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2" x-text="isEditing ? 'Cập nhật tri thức' : 'Gieo mầm tri thức mới'"></h3>
+                <button @click="showAddModal = false" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             
-            <div class="p-8 space-y-6 overflow-y-auto">
+            <div class="p-8 space-y-6 overflow-y-auto custom-scrollbar">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-4">
                         <div>
-                            <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Tiêu đề</label>
-                            <input type="text" x-model="newNote.title" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none outline-none font-bold text-slate-800 dark:text-white">
+                            <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block ml-1">Tiêu đề</label>
+                            <input type="text" x-model="newNote.title" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 focus:border-primary-500 outline-none font-bold text-slate-800 dark:text-white transition-colors">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Khu vực</label>
-                                <select x-model="newNote.category" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none outline-none font-bold text-sm">
-                                    <template x-for="cat in categories" :key="cat.id">
-                                        <option :value="cat.name" x-text="cat.name"></option>
-                                    </template>
-                                </select>
+                                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block ml-1">Khu vực</label>
+                                <div class="relative">
+                                    <select x-model="newNote.category" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 outline-none font-bold text-sm appearance-none cursor-pointer">
+                                        <template x-for="cat in categories" :key="cat.id">
+                                            <option :value="cat.name" x-text="cat.name"></option>
+                                        </template>
+                                    </select>
+                                    <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                                </div>
                             </div>
                             <div>
-                                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Chủ đề con</label>
-                                <select x-model="newNote.subCategory" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none outline-none font-bold text-sm">
-                                    <template x-for="sub in getAvailableSubs(newNote.category)" :key="sub">
-                                        <option :value="sub" x-text="sub"></option>
-                                    </template>
-                                </select>
+                                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block ml-1">Chủ đề con</label>
+                                <div class="relative">
+                                    <select x-model="newNote.subCategory" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 outline-none font-bold text-sm appearance-none cursor-pointer">
+                                        <template x-for="sub in getAvailableSubs(newNote.category)" :key="sub">
+                                            <option :value="sub" x-text="sub"></option>
+                                        </template>
+                                    </select>
+                                    <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div>
-                        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Hình ảnh minh họa</label>
-                        <label class="w-full h-40 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary-500 transition-all overflow-hidden relative">
-                            <template x-if="!newNote.image">
-                                <div class="text-center p-4">
-                                    <i data-lucide="image-plus" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Tải ảnh lên</span>
+                        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block ml-1">Hình ảnh (Auto Upload)</label>
+                        <label class="w-full h-[180px] border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all overflow-hidden relative group">
+                            <template x-if="!uploadPreview && !newNote.image">
+                                <div class="text-center p-4 group-hover:scale-105 transition-transform">
+                                    <i data-lucide="cloud-upload" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase block">Chọn ảnh từ máy</span>
                                 </div>
                             </template>
-                            <template x-if="newNote.image">
-                                <img :src="newNote.image" class="w-full h-full object-cover">
+                            <template x-if="uploadPreview || newNote.image">
+                                <div class="w-full h-full relative">
+                                    <img :src="uploadPreview || newNote.image" class="w-full h-full object-cover">
+                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span class="text-white text-xs font-bold uppercase border border-white px-3 py-1 rounded-full">Thay đổi</span>
+                                    </div>
+                                </div>
                             </template>
-                            <input type="file" @change="handleFileUpload" class="hidden" accept="image/*">
+                            <input type="file" @change="handleFileSelect" class="hidden" accept="image/*">
                         </label>
                     </div>
                 </div>
 
                 <div>
-                    <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Nội dung (Markdown)</label>
-                    <textarea x-model="newNote.content" rows="6" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none outline-none resize-none text-sm dark:text-slate-200" placeholder="# Viết gì đó..."></textarea>
+                    <div class="flex justify-between items-center mb-2 px-1">
+                        <label class="text-[10px] font-black uppercase text-slate-400">Nội dung (Markdown)</label>
+                        <div class="flex gap-1">
+                            <button @click="insertMarkdown('**', '**')" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-[10px] font-bold hover:bg-slate-200">B</button>
+                            <button @click="insertMarkdown('*', '*')" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-[10px] italic hover:bg-slate-200">I</button>
+                            <button @click="insertMarkdown('# ', '')" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-[10px] font-bold hover:bg-slate-200">H1</button>
+                            <button @click="insertMarkdown('- ', '')" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-[10px] hover:bg-slate-200">List</button>
+                            <button @click="insertMarkdown('```\n', '\n```')" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-[10px] font-mono hover:bg-slate-200">&lt;/&gt;</button>
+                        </div>
+                    </div>
+                    <textarea id="noteEditor" x-model="newNote.content" rows="8" class="w-full bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 focus:border-primary-500 outline-none resize-none text-sm dark:text-slate-200 font-mono leading-relaxed" placeholder="# Hãy viết điều gì đó tuyệt vời..."></textarea>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block">Thẻ phân loại (cách nhau dấu phẩy)</label>
-                        <input type="text" x-model="newNote.tagsInput" placeholder="vd: ykhoa, tim-mach" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border-none text-sm outline-none">
+                        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block ml-1">Thẻ phân loại (Tags)</label>
+                        <input type="text" x-model="newNote.tagsInput" placeholder="vd: idea, quan-trong (phân cách bằng dấu phẩy)" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 focus:border-primary-500 text-sm outline-none">
                     </div>
                     <div class="flex items-end">
                         <button @click="newNote.isPublic = !newNote.isPublic" 
                             :class="newNote.isPublic ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-slate-700 shadow-slate-700/20'"
-                            class="w-full p-4 rounded-2xl text-white text-xs font-black transition-all flex items-center justify-center gap-3 shadow-lg">
+                            class="w-full p-4 rounded-2xl text-white text-xs font-black transition-all flex items-center justify-center gap-3 shadow-lg hover:brightness-110">
                             <i :data-lucide="newNote.isPublic ? 'globe' : 'eye-off'" class="w-4 h-4 text-white"></i>
-                            <span class="text-white" x-text="newNote.isPublic ? 'CHẾ ĐỘ CÔNG KHAI' : 'CHẾ ĐỘ RIÊNG TƯ'"></span>
+                            <span class="text-white" x-text="newNote.isPublic ? 'CÔNG KHAI (Mọi người đều thấy)' : 'RIÊNG TƯ (Cần mật khẩu)'"></span>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div class="p-8 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-4">
-                <button @click="showAddModal = false" class="px-6 py-3 font-bold text-slate-400 uppercase text-[10px] tracking-widest">Hủy bỏ</button>
-                <button @click="saveNote()" class="bg-primary-600 hover:bg-primary-700 text-white px-10 py-4 rounded-2xl font-black shadow-xl transition-all hover:-translate-y-1 uppercase text-xs">
-                    <span x-text="isLoading ? 'Đang lưu...' : 'Xác nhận lưu'"></span>
+            <div class="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-4">
+                <button @click="showAddModal = false" class="px-6 py-3 font-bold text-slate-400 uppercase text-[10px] tracking-widest hover:text-slate-600 transition-colors">Hủy bỏ</button>
+                <button @click="saveNote()" class="bg-primary-600 hover:bg-primary-700 text-white px-10 py-3 rounded-xl font-black shadow-xl shadow-primary-500/20 transition-all hover:-translate-y-1 uppercase text-xs flex items-center gap-2">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    <span x-text="isLoading ? 'Đang lưu...' : 'Lưu trữ ghi chú'"></span>
                 </button>
             </div>
         </div>
     </div>
 
-    <div x-show="showCatModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm">
-        <div @click.away="showCatModal = false" class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div x-show="showCatModal" x-cloak class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm">
+        <div @click.away="showCatModal = false" class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
             <div class="p-8 border-b border-slate-100 dark:border-slate-800">
-                <h3 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Quản lý</h3>
+                <h3 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Quản lý khu vực</h3>
             </div>
             
-            <div class="p-8 overflow-y-auto space-y-6">
-                <div class="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem] space-y-4">
-                    <label class="text-[10px] font-black uppercase text-primary-600 block">Thêm khu vực & Mã màu</label>
+            <div class="p-8 overflow-y-auto space-y-6 custom-scrollbar">
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem] space-y-4 border border-slate-100 dark:border-slate-800">
+                    <label class="text-[10px] font-black uppercase text-primary-600 block">Thêm khu vực mới</label>
                     <div class="flex gap-3">
-                        <input type="text" x-model="newCatName" placeholder="Tên khu vực (vd: 🏥 Nội khoa)" class="flex-1 bg-white dark:bg-slate-800 p-3 rounded-xl border-none outline-none font-bold text-sm">
+                        <input type="text" x-model="newCatName" placeholder="Tên khu vực (vd: 🏥 Nội khoa)" class="flex-1 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 outline-none font-bold text-sm">
                         <input type="color" x-model="newCatColor" class="w-12 h-12 p-1 bg-white dark:bg-slate-800 rounded-xl border-none cursor-pointer">
-                        <button @click="addCategory()" class="bg-primary-600 text-white px-6 rounded-xl font-black text-[10px] uppercase text-white">Thêm</button>
+                        <button @click="addCategory()" class="bg-primary-600 text-white px-6 rounded-xl font-black text-[10px] uppercase text-white shadow-lg shadow-primary-500/20">Thêm</button>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <template x-for="cat in categories" :key="cat.id">
-                        <div class="border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-primary-500/30 transition-colors">
+                        <div class="border border-slate-100 dark:border-slate-800 rounded-2xl p-5 hover:border-primary-500/30 transition-colors bg-white dark:bg-slate-900">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-4 h-4 rounded-full shadow-sm" :style="'background-color:' + cat.color"></div>
                                     <span class="font-black text-slate-800 dark:text-white" x-text="cat.name"></span>
                                 </div>
-                                <button @click="deleteCategory(cat.id)" class="text-slate-300 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                <button @click="deleteCategory(cat.id)" class="text-slate-300 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                             </div>
                             
                             <div class="ml-7 space-y-2">
                                 <div class="flex flex-wrap gap-2">
                                     <template x-for="(sub, index) in cat.subs" :key="index">
-                                        <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 py-1.5 px-3 rounded-lg">
+                                        <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 py-1.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700">
                                             <span class="text-[10px] font-bold" x-text="sub"></span>
                                             <button @click="deleteSubCategory(cat.id, sub)" class="text-slate-400 hover:text-red-500"><i data-lucide="x" class="w-3 h-3"></i></button>
                                         </div>
@@ -346,9 +550,9 @@
                                 </div>
                                 
                                 <div class="flex gap-2 mt-4">
-                                    <input type="text" :id="'newsub-'+cat.id" placeholder="Thêm chủ đề con..." class="flex-1 bg-slate-50 dark:bg-slate-950 p-2 px-4 rounded-xl border-none text-[10px] outline-none font-bold">
+                                    <input type="text" :id="'newsub-'+cat.id" placeholder="Thêm chủ đề con..." class="flex-1 bg-slate-50 dark:bg-slate-950 p-2 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-[10px] outline-none font-bold">
                                     <button @click="addSubCategory(cat.id, document.getElementById('newsub-'+cat.id).value); document.getElementById('newsub-'+cat.id).value=''" 
-                                        class="bg-slate-800 text-white px-4 rounded-xl text-[9px] font-black uppercase text-white">Thêm</button>
+                                        class="bg-slate-800 hover:bg-slate-700 text-white px-4 rounded-xl text-[9px] font-black uppercase text-white transition-colors">Thêm</button>
                                 </div>
                             </div>
                         </div>
@@ -356,49 +560,113 @@
                 </div>
             </div>
             
-            <button @click="showCatModal = false" class="m-8 mt-0 py-4 bg-slate-100 dark:bg-slate-800 rounded-2xl font-black text-slate-500 text-[10px] uppercase tracking-widest hover:bg-primary-600 hover:text-white transition-all">Hoàn tất thiết lập</button>
+            <div class="p-6 border-t border-slate-100 dark:border-slate-800">
+                 <button @click="showCatModal = false" class="w-full py-4 bg-slate-100 dark:bg-slate-800 rounded-2xl font-black text-slate-500 text-[10px] uppercase tracking-widest hover:bg-primary-600 hover:text-white transition-all">Hoàn tất</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // CẤU HÌNH SERVER URL CỦA BẠN TẠI ĐÂY
+        // CẤU HÌNH SERVER URL
         const SERVER_URL = 'https://luuhihi.ngxuanhai123.workers.dev'; 
-
+        const KEY_NOTES = 'HIHI_NOTES_CACHE';
+        const KEY_CATS = 'HIHI_CATS_CACHE';
+        const KEY_AUTH = 'HIHI_AUTH_TOKEN';
+        
         function appData() {
             return {
                 darkMode: false,
                 isLoading: false,
+                loadingText: 'Đang xử lý...',
                 isUnlocked: false,
-                userPassword: '', // Lưu password tạm thời trong phiên
+                userPassword: '', 
                 showAddModal: false,
                 showCatModal: false,
+                toasts: [],
+                
+                showReadModal: false,
+                selectedNote: null,
+
                 searchQuery: '',
                 activeCategory: '',
                 activeSubCategory: '',
+                viewMode: 'active', // 'active' or 'trash'
+                
                 isEditing: false,
                 currentEditId: null,
+                
+                // Upload logic variables
+                selectedFile: null,
+                uploadPreview: null,
+                
                 newCatName: '',
                 newCatColor: '#0d9488',
-                
+                syncStatus: 'synced',
+                syncStatusText: 'Đồng bộ',
+                imgServerStatus: 'online', // New Variable for Image Server
+
                 categories: [],
                 notes: [],
                 newNote: { title: '', category: '', subCategory: '', content: '', image: null, tagsInput: '', isPublic: true },
 
                 init() {
-                    this.isLoading = true;
-                    this.loadData();
+                    const cachedPass = localStorage.getItem(KEY_AUTH);
+                    if (cachedPass) {
+                        this.userPassword = cachedPass;
+                        this.isUnlocked = true;
+                    }
+                    this.loadLocalData();
+                    
                     this.$watch('newNote.category', val => {
                         const cat = this.categories.find(c => c.name === val);
-                        this.newNote.subCategory = (cat && cat.subs.length > 0) ? cat.subs[0] : '';
+                        if(cat && !this.isEditing) {
+                             this.newNote.subCategory = (cat.subs.length > 0) ? cat.subs[0] : '';
+                        }
                     });
+                    
                     this.$watch('currentThemeColor', val => {
                         document.documentElement.style.setProperty('--theme-color', val);
                         document.documentElement.style.setProperty('--theme-rgb', this.hexToRgb(val));
                     });
+                    
                     this.refreshIcons();
+                    this.syncDataFromServer();
+                    this.cleanupTrash();
+                },
+
+                // --- TOAST NOTIFICATION ---
+                showToast(message, type = 'success') {
+                    const id = Date.now();
+                    this.toasts.push({ id, message, type });
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== id);
+                    }, 3000);
+                },
+
+                // --- MARKDOWN TOOLBAR ---
+                insertMarkdown(prefix, suffix) {
+                    const textarea = document.getElementById('noteEditor');
+                    if (!textarea) return;
+                    
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const text = this.newNote.content;
+                    
+                    const before = text.substring(0, start);
+                    const selected = text.substring(start, end);
+                    const after = text.substring(end);
+
+                    this.newNote.content = before + prefix + selected + suffix + after;
+                    
+                    this.$nextTick(() => {
+                        textarea.focus();
+                        textarea.selectionStart = start + prefix.length;
+                        textarea.selectionEnd = end + prefix.length;
+                    });
                 },
 
                 hexToRgb(hex) {
+                    if(!hex) return '13, 148, 136';
                     hex = hex.replace('#', '');
                     const r = parseInt(hex.substring(0,2), 16);
                     const g = parseInt(hex.substring(2,4), 16);
@@ -414,172 +682,404 @@
                     return '#0d9488';
                 },
 
-                // --- API HELPERS ---
+                get activeNotesCount() {
+                    return this.notes.filter(n => !n.deletedAt).length;
+                },
+                get trashCount() {
+                    return this.notes.filter(n => n.deletedAt).length;
+                },
+
+                openReadModal(note) {
+                    if (!note.isPublic && !this.isUnlocked) return;
+                    this.selectedNote = note;
+                    this.showReadModal = true;
+                    this.refreshIcons();
+                },
+
+                loadLocalData() {
+                    try {
+                        const localNotes = localStorage.getItem(KEY_NOTES);
+                        const localCats = localStorage.getItem(KEY_CATS);
+                        if (localNotes) this.notes = JSON.parse(localNotes);
+                        if (localCats) this.categories = JSON.parse(localCats);
+                        this.refreshIcons();
+                    } catch (e) {
+                        console.error("Lỗi đọc LocalStorage", e);
+                    }
+                },
+
+                saveToLocal() {
+                    try {
+                        localStorage.setItem(KEY_NOTES, JSON.stringify(this.notes));
+                        localStorage.setItem(KEY_CATS, JSON.stringify(this.categories));
+                    } catch (e) {
+                        console.error("Storage full", e);
+                        this.showToast("Cảnh báo: Bộ nhớ trình duyệt đầy!", "error");
+                    }
+                },
+
+                // --- CLOUD UPLOAD ---
+                handleFileSelect(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        this.selectedFile = file;
+                        const reader = new FileReader();
+                        reader.onload = (e) => this.uploadPreview = e.target.result;
+                        reader.readAsDataURL(file);
+                    }
+                },
+
+             // --- CLOUD UPLOAD VIA CLOUDFLARE WORKER ---
+                async uploadImageToCloud(file) {
+                    if (!this.isUnlocked) {
+                        this.showToast("Vui lòng mở khóa để upload ảnh!", "error");
+                        throw new Error("Unauthorized");
+                    }
+
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    
+                    try {
+                        const response = await fetch(`${SERVER_URL}/upload-image`, {
+                            method: 'POST',
+                            headers: { 'Authorization': this.userPassword },
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            return data.url; 
+                        } else {
+                            throw new Error(data.error || 'Upload failed');
+                        }
+                    } catch (error) {
+                        console.error('Lỗi upload ảnh:', error);
+                        this.showToast("Lỗi Upload: " + error.message, "error");
+                        this.imgServerStatus = 'offline'; // Set offline if upload fails
+                        return this.compressImage(file);
+                    }
+                },
+                
+                async compressImage(file) {
+                   return new Promise((resolve) => {
+                       const reader = new FileReader();
+                       reader.onload = (e) => resolve(e.target.result); 
+                       reader.readAsDataURL(file);
+                   });
+                },
+
+                // --- SYNC LOGIC (Updated) ---
                 async fetchAPI(endpoint, method = 'GET', body = null) {
                     try {
                         const options = {
                             method,
                             headers: { 
                                 'Content-Type': 'application/json',
-                                'Authorization': this.userPassword // Gửi password để xác thực
+                                'Authorization': this.userPassword
                             }
                         };
                         if (body) options.body = JSON.stringify(body);
-                        
                         const response = await fetch(`${SERVER_URL}${endpoint}`, options);
-                        if (!response.ok) throw new Error(response.statusText);
                         return await response.json();
                     } catch (error) {
                         console.error("API Error:", error);
-                        alert("Lỗi kết nối Server: " + error.message);
-                        return null;
+                        throw error;
                     }
                 },
 
-                async loadData() {
-                    this.isLoading = true;
+                async syncDataFromServer() {
+                    this.syncStatus = 'syncing';
+                    this.syncStatusText = 'Đang đồng bộ...';
+                    this.imgServerStatus = 'checking'; // Checking image server indirectly
+                    
                     try {
-                        // Gọi endpoint công khai lấy dữ liệu
                         const response = await fetch(`${SERVER_URL}/data`);
                         const data = await response.json();
-                        if (data) {
-                            this.notes = data.notes || [];
-                            this.categories = data.categories || [];
+                        
+                        if (data && data.notes) {
+                            const serverNotes = data.notes;
+                            let hasChanges = false;
+
+                            serverNotes.forEach(serverNote => {
+                                const localIndex = this.notes.findIndex(n => n.id === serverNote.id);
+                                if (localIndex === -1) {
+                                    this.notes.push(serverNote);
+                                    hasChanges = true;
+                                } else {
+                                    const localNote = this.notes[localIndex];
+                                    const serverTime = new Date(serverNote.updatedAt).getTime();
+                                    const localTime = new Date(localNote.updatedAt).getTime();
+                                    
+                                    if (serverTime > localTime) {
+                                        this.notes[localIndex] = serverNote;
+                                        hasChanges = true;
+                                    }
+                                }
+                            });
+                            
+                            if (data.categories) {
+                                this.categories = data.categories;
+                                hasChanges = true;
+                            }
+
+                            if (hasChanges) this.saveToLocal();
+                            
+                            this.syncStatus = 'synced';
+                            this.syncStatusText = 'Đã đồng bộ';
+                            this.imgServerStatus = 'online'; // Assume online if main sync works
                         }
                     } catch (e) {
-                        console.error("Failed to load data", e);
+                        this.syncStatus = 'error';
+                        this.syncStatusText = 'Offline Mode';
+                        this.imgServerStatus = 'offline';
                     } finally {
-                        this.isLoading = false;
                         this.refreshIcons();
                     }
                 },
 
-                async toggleLock() {
-                    if (this.isUnlocked) {
-                        this.isUnlocked = false;
-                        this.userPassword = '';
+                // --- SAVE & DELETE ---
+                async saveNote() {
+                    if (!this.newNote.title || !this.newNote.content) {
+                        this.showToast("Vui lòng nhập tiêu đề và nội dung!", "error");
                         return;
                     }
-
-                    const pass = prompt("Nhập mật khẩu truy cập:");
-                    if (!pass) return;
-
-                    try {
-                        const response = await fetch(`${SERVER_URL}/check`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ password: pass })
-                        });
-
-                        const result = await response.json();
-                        if (result.success) {
-                            this.isUnlocked = true;
-                            this.userPassword = pass; // Lưu pass để dùng cho các request sau
-                            alert("Mở khóa thành công!");
-                        } else {
-                            alert("Mật khẩu không chính xác!");
-                        }
-                    } catch (error) {
-                        alert("Lỗi kết nối server!");
-                    }
-                },
-
-                async saveNote() {
-                    if (!this.newNote.title || !this.newNote.content) return alert("Vui lòng nhập đủ thông tin!");
+                    
                     this.isLoading = true;
+                    this.loadingText = 'Đang xử lý...';
+
+                    // 1. Upload ảnh
+                    let imageUrl = this.newNote.image;
+                    if (this.selectedFile) {
+                        this.loadingText = 'Đang Upload ảnh...';
+                        try {
+                            imageUrl = await this.uploadImageToCloud(this.selectedFile);
+                        } catch (e) {
+                            console.log("Upload failed, using local base64");
+                        }
+                    }
 
                     const noteData = {
-                        id: this.isEditing ? this.currentEditId : crypto.randomUUID(), // Dùng UUID cho ID
+                        id: this.isEditing ? this.currentEditId : crypto.randomUUID(),
                         title: this.newNote.title,
                         category: this.newNote.category,
                         subCategory: this.newNote.subCategory,
                         content: this.newNote.content,
-                        image: this.newNote.image,
+                        image: imageUrl, 
                         isPublic: this.newNote.isPublic,
                         tags: this.newNote.tagsInput.split(',').map(t => t.trim()).filter(t => t),
                         createdAt: this.isEditing ? this.notes.find(n => n.id === this.currentEditId).createdAt : new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
+                        updatedAt: new Date().toISOString(),
+                        deletedAt: null 
                     };
 
-                    const result = await this.fetchAPI('/note', 'POST', noteData);
+                    if (this.isEditing) {
+                        const index = this.notes.findIndex(n => n.id === this.currentEditId);
+                        if (index !== -1) this.notes[index] = noteData;
+                    } else {
+                        this.notes.unshift(noteData);
+                    }
                     
-                    if (result && result.success) {
-                        await this.loadData(); // Reload lại dữ liệu từ server
-                        this.showAddModal = false;
+                    this.saveToLocal();
+
+                    // Sync lên server
+                    try {
+                        await this.fetchAPI('/note', 'POST', noteData);
+                        this.syncStatus = 'synced';
+                        this.showToast("Đã lưu và đồng bộ thành công!");
+                    } catch (e) {
+                        this.syncStatus = 'error';
+                        this.showToast("Đã lưu vào máy (Chưa đồng bộ Cloud)", "error");
                     }
+
+                    this.showAddModal = false;
                     this.isLoading = false;
+                    this.refreshIcons();
                 },
 
-                async deleteNote(id) {
-                    if (confirm('Xóa vĩnh viễn ghi chú này?')) {
-                        this.isLoading = true;
-                        const result = await this.fetchAPI(`/note/${id}`, 'DELETE');
-                        if (result && result.success) {
-                            this.notes = this.notes.filter(n => n.id !== id);
-                        }
-                        this.isLoading = false;
+                // Soft Delete
+                async softDeleteNote(id) {
+                    const note = this.notes.find(n => n.id === id);
+                    if (note) {
+                        note.deletedAt = new Date().toISOString();
+                        note.updatedAt = new Date().toISOString(); 
+                        this.saveToLocal();
+                        this.showToast("Đã chuyển vào thùng rác");
+                        
+                        try { await this.fetchAPI('/note', 'POST', note); } catch(e) {}
                     }
                 },
 
+                // Restore
+                async restoreNote(id) {
+                    const note = this.notes.find(n => n.id === id);
+                    if (note) {
+                        note.deletedAt = null;
+                        note.updatedAt = new Date().toISOString();
+                        this.saveToLocal();
+                        this.showToast("Đã khôi phục ghi chú");
+                        try { await this.fetchAPI('/note', 'POST', note); } catch(e) {}
+                    }
+                },
+
+                // Hard Delete
+                async hardDeleteNote(id) {
+                    if (!confirm('Hành động này không thể hoàn tác. Xóa vĩnh viễn?')) return;
+                    
+                    this.notes = this.notes.filter(n => n.id !== id);
+                    this.saveToLocal();
+                    this.showToast("Đã xóa vĩnh viễn");
+
+                    try {
+                        await this.fetchAPI(`/note/${id}`, 'DELETE');
+                    } catch (e) {}
+                },
+
+                // Cleanup Trash (30 days)
+                cleanupTrash() {
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    
+                    const oldNotes = this.notes.filter(n => n.deletedAt && new Date(n.deletedAt) < thirtyDaysAgo);
+                    if (oldNotes.length > 0) {
+                        oldNotes.forEach(n => this.hardDeleteNote(n.id));
+                        console.log(`Auto cleaned ${oldNotes.length} old notes`);
+                    }
+                },
+
+                // --- IMPORT / EXPORT ---
+                exportData() {
+                    const data = {
+                        notes: this.notes,
+                        categories: this.categories,
+                        exportDate: new Date().toISOString()
+                    };
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+                    const downloadAnchorNode = document.createElement('a');
+                    downloadAnchorNode.setAttribute("href", dataStr);
+                    downloadAnchorNode.setAttribute("download", "hihi_backup_" + new Date().toISOString().slice(0,10) + ".json");
+                    document.body.appendChild(downloadAnchorNode);
+                    downloadAnchorNode.click();
+                    downloadAnchorNode.remove();
+                    this.showToast("Đã xuất file backup thành công!");
+                },
+
+                importData(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.notes && Array.isArray(data.notes)) {
+                                if(confirm(`Tìm thấy ${data.notes.length} ghi chú trong file backup. Bạn có muốn nhập vào không?`)) {
+                                    this.notes = data.notes;
+                                    if(data.categories) this.categories = data.categories;
+                                    this.saveToLocal();
+                                    this.showToast("Khôi phục dữ liệu thành công!");
+                                    setTimeout(() => window.location.reload(), 1000);
+                                }
+                            } else {
+                                alert("File không hợp lệ!");
+                            }
+                        } catch (err) {
+                            alert("Lỗi đọc file JSON");
+                        }
+                    };
+                    reader.readAsText(file);
+                },
+
+                // --- AUTH & HELPERS ---
+                async handleLockAction() {
+                    if (this.isUnlocked) {
+                        if(confirm("Bạn có muốn khóa lại (Đăng xuất)?")) {
+                            this.isUnlocked = false;
+                            this.userPassword = '';
+                            localStorage.removeItem(KEY_AUTH);
+                            this.showReadModal = false;
+                            this.viewMode = 'active'; 
+                        }
+                    } else {
+                        const pass = prompt("Nhập mật khẩu truy cập:");
+                        if (!pass) return;
+                        this.isLoading = true;
+                        try {
+                            const response = await fetch(`${SERVER_URL}/check`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ password: pass })
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                                this.isUnlocked = true;
+                                this.userPassword = pass;
+                                localStorage.setItem(KEY_AUTH, pass); 
+                                this.showToast("Mở khóa thành công!");
+                            } else {
+                                this.showToast("Sai mật khẩu!", "error");
+                            }
+                        } catch (error) {
+                            this.showToast("Lỗi kết nối server!", "error");
+                        } finally {
+                            this.isLoading = false;
+                        }
+                    }
+                },
+                
                 async addCategory() {
                     if (this.newCatName && !this.categories.find(c => c.name === this.newCatName)) {
-                        this.isLoading = true;
-                        const newCat = {
-                            id: crypto.randomUUID(),
-                            name: this.newCatName,
-                            color: this.newCatColor,
-                            subs: []
-                        };
-                        const result = await this.fetchAPI('/category', 'POST', newCat);
-                        if (result && result.success) {
-                            this.categories.push(newCat);
-                            this.newCatName = '';
-                        }
-                        this.isLoading = false;
+                        const newCat = { id: crypto.randomUUID(), name: this.newCatName, color: this.newCatColor, subs: [] };
+                        this.categories.push(newCat);
+                        this.saveToLocal();
+                        this.newCatName = '';
+                        try { await this.fetchAPI('/category', 'POST', newCat); } catch(e) {}
                     }
                 },
-
                 async deleteCategory(id) {
-                    if (confirm('Xóa thư mục này?')) {
-                        this.isLoading = true;
-                        const result = await this.fetchAPI(`/category/${id}`, 'DELETE');
-                        if (result && result.success) {
-                            this.categories = this.categories.filter(c => c.id !== id);
-                        }
-                        this.isLoading = false;
-                    }
+                    if (!confirm('Xóa thư mục này?')) return;
+                    this.categories = this.categories.filter(c => c.id !== id);
+                    this.saveToLocal();
+                    try { await this.fetchAPI(`/category/${id}`, 'DELETE'); } catch(e) {}
                 },
-
-                async saveCategoryUpdate(cat) {
-                    // Helper function để update subcategories
-                    await this.fetchAPI('/category', 'POST', cat);
-                },
-
                 async addSubCategory(catId, subName) {
                     if (!subName) return;
                     const cat = this.categories.find(c => c.id === catId);
                     if (cat && !cat.subs.includes(subName)) {
                         cat.subs.push(subName);
-                        await this.saveCategoryUpdate(cat); // Lưu lên server
+                        this.saveToLocal();
+                        try { await this.fetchAPI('/category', 'POST', cat); } catch(e) {}
                     }
                 },
-
                 async deleteSubCategory(catId, subName) {
                     const cat = this.categories.find(c => c.id === catId);
                     if (cat) {
                         cat.subs = cat.subs.filter(s => s !== subName);
-                        await this.saveCategoryUpdate(cat); // Lưu lên server
+                        this.saveToLocal();
+                        try { await this.fetchAPI('/category', 'POST', cat); } catch(e) {}
                     }
                 },
-
-                // --- UI HELPERS ---
+                
+                // UI Helpers
+                setCategoryFilter(name) { this.activeCategory = name; this.activeSubCategory = ''; this.viewMode = 'active'; window.scrollTo({top: 0, behavior: 'smooth'}); },
+                setSubCategoryFilter(cat, sub) { this.activeCategory = cat; this.activeSubCategory = sub; this.viewMode = 'active'; window.scrollTo({top: 0, behavior: 'smooth'}); },
+                resetFilters() { this.activeCategory = ''; this.activeSubCategory = ''; this.searchQuery = ''; this.viewMode = 'active'; window.scrollTo({top: 0, behavior: 'smooth'}); },
                 refreshIcons() { setTimeout(() => lucide.createIcons(), 100); },
                 get filteredNotes() {
-                    let result = this.notes.filter(note => {
-                        const matchSearch = note.title.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
-                                          note.content.toLowerCase().includes(this.searchQuery.toLowerCase());
-                        const matchCat = this.activeCategory ? note.category === this.activeCategory : true;
-                        const matchSub = this.activeSubCategory ? note.subCategory === this.activeSubCategory : true;
+                    let source = this.notes;
+                    
+                    if (this.viewMode === 'trash') {
+                        source = source.filter(n => n.deletedAt !== null);
+                    } else {
+                        source = source.filter(n => n.deletedAt === null); 
+                    }
+
+                    let result = source.filter(note => {
+                        const matchSearch = (note.title || '').toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+                                          (note.content || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                                          (note.tags || []).some(t => t.toLowerCase().includes(this.searchQuery.toLowerCase()));
+                        const matchCat = (this.activeCategory && this.viewMode !== 'trash') ? note.category === this.activeCategory : true;
+                        const matchSub = (this.activeSubCategory && this.viewMode !== 'trash') ? note.subCategory === this.activeSubCategory : true;
                         return matchSearch && matchCat && matchSub;
                     });
                     return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -589,24 +1089,19 @@
                     return cat ? cat.subs : [];
                 },
                 openAddModal() {
-                    if(!this.isUnlocked) return alert("Vui lòng mở khóa để đăng bài!");
+                    if(!this.isUnlocked) return this.showToast("Vui lòng mở khóa để đăng bài!", "error");
                     this.isEditing = false;
+                    this.selectedFile = null;
+                    this.uploadPreview = null;
                     this.resetNewNote();
                     this.showAddModal = true;
                     this.refreshIcons();
                 },
-                handleFileUpload(e) {
-                    const file = e.target.files[0];
-                    if (file) {
-                        // Lưu ý: Lưu ảnh base64 vào D1 có thể nặng. Tốt nhất nên dùng R2, nhưng ở đây demo lưu tạm vào D1.
-                        const reader = new FileReader();
-                        reader.onload = (event) => this.newNote.image = event.target.result;
-                        reader.readAsDataURL(file);
-                    }
-                },
                 editNote(note) {
                     this.isEditing = true;
                     this.currentEditId = note.id;
+                    this.selectedFile = null;
+                    this.uploadPreview = null;
                     this.newNote = {
                         title: note.title,
                         category: note.category,
@@ -614,7 +1109,7 @@
                         content: note.content,
                         image: note.image,
                         isPublic: note.isPublic,
-                        tagsInput: note.tags.join(', ')
+                        tagsInput: (note.tags || []).join(', ')
                     };
                     this.showAddModal = true;
                     this.refreshIcons();
@@ -628,10 +1123,13 @@
                         content: '', image: null, tagsInput: '', isPublic: true 
                     };
                 },
-                resetFilters() { this.activeCategory = ''; this.activeSubCategory = ''; this.searchQuery = ''; },
-                countNotes(cat, sub) { return this.notes.filter(n => n.category === cat && n.subCategory === sub).length; },
-                countNotesInParent(cat) { return this.notes.filter(n => n.category === cat).length; },
-                formatDate(date) { return new Date(date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+                countNotes(cat, sub) { return this.notes.filter(n => n.category === cat && n.subCategory === sub && !n.deletedAt).length; },
+                countNotesInParent(cat) { return this.notes.filter(n => n.category === cat && !n.deletedAt).length; },
+                stripMarkdown(text) { return text ? text.replace(/[#*`]/g, '') : ''; },
+                formatDate(date) { 
+                    try { return new Date(date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+                    catch(e) { return ''; }
+                }
             }
         }
     </script>
