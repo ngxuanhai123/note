@@ -352,13 +352,14 @@
              x-transition:enter-end="opacity-100 translate-y-0 scale-100"
              class="bg-white dark:bg-[#0f172a] w-full max-w-5xl h-[95vh] sm:h-[90vh] rounded-t-[2rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden relative border border-slate-200 dark:border-slate-800">
             
-            <div class="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-start pointer-events-none bg-gradient-to-b from-white via-white/80 to-transparent dark:from-[#0f172a] dark:via-[#0f172a]/80 h-32">
-                <button @click="showReadModal = false" class="pointer-events-auto p-3 bg-white/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 rounded-full backdrop-blur shadow-sm transition-all border border-slate-200/50 dark:border-slate-700/50">
+            <div class="relative flex-shrink-0 z-10 p-4 sm:px-6 flex justify-between items-center bg-white dark:bg-[#0f172a] border-b border-slate-100 dark:border-slate-800">
+                <button @click="showReadModal = false" class="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors flex items-center gap-2">
                     <i data-lucide="x" class="w-5 h-5 text-slate-600 dark:text-slate-300"></i>
+                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400 pr-2 hidden sm:inline">Đóng</span>
                 </button>
                 <template x-if="isUnlocked && selectedNote && viewMode === 'active'">
-                     <div class="flex gap-2 pointer-events-auto">
-                        <button @click="editNote(selectedNote); showReadModal=false" class="flex items-center gap-2 px-4 py-2 bg-blue-50/90 hover:bg-blue-100 text-blue-600 rounded-full backdrop-blur font-bold text-xs transition-colors shadow-sm">
+                     <div class="flex gap-2">
+                        <button @click="editNote(selectedNote); showReadModal=false" class="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full font-bold text-xs transition-colors shadow-sm border border-blue-100">
                             <i data-lucide="edit-3" class="w-4 h-4"></i>
                             <span>Chỉnh sửa</span>
                         </button>
@@ -366,24 +367,19 @@
                 </template>
             </div>
 
-            <div class="overflow-y-auto flex-1 h-full scroll-smooth" id="reader-content">
+            <div class="overflow-y-auto flex-1 h-full scroll-smooth bg-white dark:bg-[#0f172a]" id="reader-content">
                 <template x-if="selectedNote">
                     <div>
                         <template x-if="selectedNote.image">
-                            <div class="w-full h-72 sm:h-96 relative">
-                                <img :src="selectedNote.image" class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-gradient-to-t from-white dark:from-[#0f172a] via-transparent to-black/10"></div>
+                            <div class="w-full relative">
+                                <img :src="selectedNote.image" class="w-full max-h-[600px] object-contain bg-slate-50 dark:bg-slate-900">
                             </div>
                         </template>
-                        <template x-if="!selectedNote.image">
-                            <div class="h-32 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-[#0f172a]"></div>
-                        </template>
-
-                        <div class="px-6 sm:px-16 pb-16 max-w-4xl mx-auto -mt-24 relative z-0">
+                        <div class="px-6 sm:px-16 pb-16 max-w-4xl mx-auto mt-8">
                             <div class="flex flex-wrap gap-2 mb-6">
                                 <span class="px-3 py-1 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm border border-primary-100 dark:border-primary-900/50" 
                                     x-text="selectedNote.category"></span>
-                                <span class="px-3 py-1 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm border border-slate-100 dark:border-slate-700" 
+                                <span class="px-3 py-1 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm border border-slate-100 dark:border-slate-700" 
                                     x-text="selectedNote.subCategory"></span>
                             </div>
 
@@ -616,6 +612,23 @@
                         this.isUnlocked = true;
                     }
                     this.loadLocalData();
+                    let canSuaDoi = false; // Cờ hiệu xem có cần sửa gì không
+
+    // Dùng hàm map để quét qua từng bài viết (n)
+    this.notes = this.notes.map(n => {
+        // Kiểm tra: Nếu bài viết này chưa từng có dòng deletedAt (undefined)
+        if (n.deletedAt === undefined) {
+            n.deletedAt = null; // Bù đắp lỗi lầm: Gán cho nó bằng null
+            canSuaDoi = true;   // Bật cờ hiệu: "Có sửa đổi nhé!"
+        }
+        return n; // Trả về bài viết đã sửa (hoặc giữ nguyên)
+    });
+
+    // Nếu cờ hiệu bật (tức là có bài viết cũ bị lỗi được sửa)
+    if (canSuaDoi) {
+        this.saveToLocal(); // Lưu ngay dữ liệu mới đã sạch sẽ vào bộ nhớ
+        console.log('🧹 Đã dọn dẹp và sửa lỗi dữ liệu cũ thành công!');
+    }
                     
                     this.$watch('newNote.category', val => {
                         const cat = this.categories.find(c => c.name === val);
@@ -1069,11 +1082,12 @@
                     let source = this.notes;
                     
                     if (this.viewMode === 'trash') {
-                        source = source.filter(n => n.deletedAt !== null);
-                    } else {
-                        source = source.filter(n => n.deletedAt === null); 
-                    }
-
+    // Chỉ lấy note có ngày xóa (tồn tại giá trị)
+    source = source.filter(n => n.deletedAt); 
+} else {
+    // Lấy note KHÔNG có ngày xóa (bao gồm cả null và undefined)
+    source = source.filter(n => !n.deletedAt); 
+}
                     let result = source.filter(note => {
                         const matchSearch = (note.title || '').toLowerCase().includes(this.searchQuery.toLowerCase()) || 
                                           (note.content || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
