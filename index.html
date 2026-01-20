@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Garden Pro v2.1 | Smart Sync & Cloud</title>
+    <title>Digital Garden Pro v2.2 | Smart Sync & Pagination</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -68,6 +68,22 @@
 
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--theme-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Thêm vào trong thẻ <style> */
+@keyframes heartBeat {
+    0% { transform: scale(1); }
+    14% { transform: scale(1.3); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.3); }
+    70% { transform: scale(1); }
+}
+
+.heart-anim {
+    display: inline-block;
+    animation: heartBeat 1.3s infinite ease-in-out; /* Nhịp đập 1.3 giây */
+    color: #ef4444; /* Màu đỏ */
+    fill: #ef4444;  /* Tô kín màu đỏ */
+    vertical-align: middle; /* Căn giữa dòng */
+}
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-500 min-h-screen font-sans flex flex-col">
@@ -158,11 +174,11 @@
                 <div class="flex gap-8 relative z-10 mb-4">
                     <div>
                         <div class="text-3xl font-black" x-text="activeNotesCount"></div>
-                        <div class="text-[9px] font-bold opacity-50 uppercase">Hạt giống</div>
+                        <div class="text-[9px] font-bold opacity-50 uppercase">Bài viết</div>
                     </div>
                     <div>
                         <div class="text-3xl font-black" x-text="categories.length"></div>
-                        <div class="text-[9px] font-bold opacity-50 uppercase">Khu vực</div>
+                        <div class="text-[9px] font-bold opacity-50 uppercase">Thư mục</div>
                     </div>
                 </div>
                 
@@ -235,7 +251,7 @@
                     </div>
 
                     <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800">
-                         <button @click="viewMode = 'trash'; activeCategory = ''; activeSubCategory = ''" 
+                         <button @click="viewMode = 'trash'; activeCategory = ''; activeSubCategory = ''; currentPage = 1" 
                             :class="viewMode === 'trash' ? 'bg-red-50 text-red-600 font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500'"
                             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -266,7 +282,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max">
-                <template x-for="note in filteredNotes" :key="note.id">
+                <template x-for="note in paginatedNotes" :key="note.id">
                     <div class="note-card cursor-pointer group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col relative h-full"
                         :style="activeCategory ? `border-bottom: 4px solid ${currentThemeColor}` : ''"
                         @click="openReadModal(note)">
@@ -332,6 +348,33 @@
                         </div>
                     </div>
                 </template>
+            </div>
+
+            <div x-show="totalPages > 1" class="flex flex-col items-center justify-center gap-2 mt-10 mb-6">
+                <div class="flex items-center bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-1">
+                    <button @click="changePage(currentPage - 1)" 
+                        :disabled="currentPage === 1"
+                        :class="currentPage === 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'"
+                        class="p-3 rounded-xl transition-all">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    
+                    <div class="flex items-center px-4 gap-2">
+                        <span class="text-sm font-black text-slate-700 dark:text-white">Trang</span>
+                        <input type="number" x-model.debounce.500ms="currentPageInput" 
+                            @change="changePage(parseInt($event.target.value))"
+                            class="w-12 text-center bg-slate-100 dark:bg-slate-800 rounded-lg py-1 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-500/50"
+                            :value="currentPage">
+                        <span class="text-sm font-medium text-slate-400">/ <span x-text="totalPages"></span></span>
+                    </div>
+
+                    <button @click="changePage(currentPage + 1)" 
+                        :disabled="currentPage === totalPages"
+                        :class="currentPage === totalPages ? 'opacity-30 cursor-not-allowed' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'"
+                        class="p-3 rounded-xl transition-all">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
             </div>
 
             <div x-show="filteredNotes.length === 0 && !isLoading" class="flex-1 flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[3rem] mt-4">
@@ -588,6 +631,11 @@
                 activeSubCategory: '',
                 viewMode: 'active', // 'active' or 'trash'
                 
+                // PAGINATION STATES
+                currentPage: 1,
+                itemsPerPage: 12, // 3 columns * 4 rows = 12
+                currentPageInput: 1,
+
                 isEditing: false,
                 currentEditId: null,
                 
@@ -599,7 +647,7 @@
                 newCatColor: '#0d9488',
                 syncStatus: 'synced',
                 syncStatusText: 'Đồng bộ',
-                imgServerStatus: 'online', // New Variable for Image Server
+                imgServerStatus: 'online',
 
                 categories: [],
                 notes: [],
@@ -612,23 +660,19 @@
                         this.isUnlocked = true;
                     }
                     this.loadLocalData();
-                    let canSuaDoi = false; // Cờ hiệu xem có cần sửa gì không
+                    let canSuaDoi = false; 
 
-    // Dùng hàm map để quét qua từng bài viết (n)
-    this.notes = this.notes.map(n => {
-        // Kiểm tra: Nếu bài viết này chưa từng có dòng deletedAt (undefined)
-        if (n.deletedAt === undefined) {
-            n.deletedAt = null; // Bù đắp lỗi lầm: Gán cho nó bằng null
-            canSuaDoi = true;   // Bật cờ hiệu: "Có sửa đổi nhé!"
-        }
-        return n; // Trả về bài viết đã sửa (hoặc giữ nguyên)
-    });
+                    this.notes = this.notes.map(n => {
+                        if (n.deletedAt === undefined) {
+                            n.deletedAt = null; 
+                            canSuaDoi = true;   
+                        }
+                        return n; 
+                    });
 
-    // Nếu cờ hiệu bật (tức là có bài viết cũ bị lỗi được sửa)
-    if (canSuaDoi) {
-        this.saveToLocal(); // Lưu ngay dữ liệu mới đã sạch sẽ vào bộ nhớ
-        console.log('🧹 Đã dọn dẹp và sửa lỗi dữ liệu cũ thành công!');
-    }
+                    if (canSuaDoi) {
+                        this.saveToLocal(); 
+                    }
                     
                     this.$watch('newNote.category', val => {
                         const cat = this.categories.find(c => c.name === val);
@@ -641,10 +685,40 @@
                         document.documentElement.style.setProperty('--theme-color', val);
                         document.documentElement.style.setProperty('--theme-rgb', this.hexToRgb(val));
                     });
+
+                    // Watchers for Pagination Reset
+                    this.$watch('searchQuery', () => this.currentPage = 1);
+                    this.$watch('activeCategory', () => this.currentPage = 1);
+                    this.$watch('activeSubCategory', () => this.currentPage = 1);
+                    this.$watch('currentPage', (val) => this.currentPageInput = val);
                     
                     this.refreshIcons();
                     this.syncDataFromServer();
                     this.cleanupTrash();
+                },
+
+                // --- PAGINATION HELPERS ---
+                get paginatedNotes() {
+                    const start = (this.currentPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    // Ensure current page is valid when filtering changes
+                    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+                        this.currentPage = 1;
+                    }
+                    return this.filteredNotes.slice(start, end);
+                },
+
+                get totalPages() {
+                    return Math.ceil(this.filteredNotes.length / this.itemsPerPage) || 1;
+                },
+
+                changePage(page) {
+                    if (page < 1) page = 1;
+                    if (page > this.totalPages) page = this.totalPages;
+                    this.currentPage = page;
+                    // Scroll to top of list
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    this.refreshIcons();
                 },
 
                 // --- TOAST NOTIFICATION ---
@@ -742,7 +816,6 @@
                     }
                 },
 
-             // --- CLOUD UPLOAD VIA CLOUDFLARE WORKER ---
                 async uploadImageToCloud(file) {
                     if (!this.isUnlocked) {
                         this.showToast("Vui lòng mở khóa để upload ảnh!", "error");
@@ -769,7 +842,7 @@
                     } catch (error) {
                         console.error('Lỗi upload ảnh:', error);
                         this.showToast("Lỗi Upload: " + error.message, "error");
-                        this.imgServerStatus = 'offline'; // Set offline if upload fails
+                        this.imgServerStatus = 'offline'; 
                         return this.compressImage(file);
                     }
                 },
@@ -804,7 +877,7 @@
                 async syncDataFromServer() {
                     this.syncStatus = 'syncing';
                     this.syncStatusText = 'Đang đồng bộ...';
-                    this.imgServerStatus = 'checking'; // Checking image server indirectly
+                    this.imgServerStatus = 'checking'; 
                     
                     try {
                         const response = await fetch(`${SERVER_URL}/data`);
@@ -840,7 +913,7 @@
                             
                             this.syncStatus = 'synced';
                             this.syncStatusText = 'Đã đồng bộ';
-                            this.imgServerStatus = 'online'; // Assume online if main sync works
+                            this.imgServerStatus = 'online'; 
                         }
                     } catch (e) {
                         this.syncStatus = 'error';
@@ -861,7 +934,6 @@
                     this.isLoading = true;
                     this.loadingText = 'Đang xử lý...';
 
-                    // 1. Upload ảnh
                     let imageUrl = this.newNote.image;
                     if (this.selectedFile) {
                         this.loadingText = 'Đang Upload ảnh...';
@@ -895,7 +967,6 @@
                     
                     this.saveToLocal();
 
-                    // Sync lên server
                     try {
                         await this.fetchAPI('/note', 'POST', noteData);
                         this.syncStatus = 'synced';
@@ -948,7 +1019,6 @@
                     } catch (e) {}
                 },
 
-                // Cleanup Trash (30 days)
                 cleanupTrash() {
                     const thirtyDaysAgo = new Date();
                     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -1074,20 +1144,18 @@
                 },
                 
                 // UI Helpers
-                setCategoryFilter(name) { this.activeCategory = name; this.activeSubCategory = ''; this.viewMode = 'active'; window.scrollTo({top: 0, behavior: 'smooth'}); },
-                setSubCategoryFilter(cat, sub) { this.activeCategory = cat; this.activeSubCategory = sub; this.viewMode = 'active'; window.scrollTo({top: 0, behavior: 'smooth'}); },
-                resetFilters() { this.activeCategory = ''; this.activeSubCategory = ''; this.searchQuery = ''; this.viewMode = 'active'; window.scrollTo({top: 0, behavior: 'smooth'}); },
+                setCategoryFilter(name) { this.activeCategory = name; this.activeSubCategory = ''; this.viewMode = 'active'; this.currentPage = 1; window.scrollTo({top: 0, behavior: 'smooth'}); },
+                setSubCategoryFilter(cat, sub) { this.activeCategory = cat; this.activeSubCategory = sub; this.viewMode = 'active'; this.currentPage = 1; window.scrollTo({top: 0, behavior: 'smooth'}); },
+                resetFilters() { this.activeCategory = ''; this.activeSubCategory = ''; this.searchQuery = ''; this.viewMode = 'active'; this.currentPage = 1; window.scrollTo({top: 0, behavior: 'smooth'}); },
                 refreshIcons() { setTimeout(() => lucide.createIcons(), 100); },
                 get filteredNotes() {
                     let source = this.notes;
                     
                     if (this.viewMode === 'trash') {
-    // Chỉ lấy note có ngày xóa (tồn tại giá trị)
-    source = source.filter(n => n.deletedAt); 
-} else {
-    // Lấy note KHÔNG có ngày xóa (bao gồm cả null và undefined)
-    source = source.filter(n => !n.deletedAt); 
-}
+                        source = source.filter(n => n.deletedAt); 
+                    } else {
+                        source = source.filter(n => !n.deletedAt); 
+                    }
                     let result = source.filter(note => {
                         const matchSearch = (note.title || '').toLowerCase().includes(this.searchQuery.toLowerCase()) || 
                                           (note.content || '').toLowerCase().includes(this.searchQuery.toLowerCase()) ||
@@ -1147,5 +1215,12 @@
             }
         }
     </script>
+  <footer class="py-8 text-center border-t border-slate-100 dark:border-slate-800 mt-auto">
+    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+        &copy; 2026 HiHi app. Made with 
+        <i data-lucide="heart" class="w-3 h-3 mx-1 heart-anim"></i> 
+        by Xuân Hải
+    </p>
+</footer>
 </body>
 </html>
