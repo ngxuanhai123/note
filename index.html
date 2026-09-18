@@ -714,7 +714,17 @@ body {
                     </p>
                     <p x-show="viewMode === 'trash'" class="text-xs text-red-500 mt-1">Các mục trong thùng rác sẽ tự động bị xóa vĩnh viễn sau 30 ngày.</p>
                 </div>
-                <div class="text-right">
+                <div class="flex items-center gap-2">
+                    <template x-if="viewMode === 'trash' && trashCount > 0">
+                        <div class="flex gap-2">
+                            <button @click="restoreAllTrash()" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm">
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Khôi phục tất cả
+                            </button>
+                            <button @click="emptyTrash()" class="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Dọn sạch thùng rác
+                            </button>
+                        </div>
+                    </template>
                     <span class="text-xs font-bold text-slate-400 uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full" x-text="filteredNotes.length + ' kết quả'"></span>
                 </div>
             </div>
@@ -748,8 +758,8 @@ body {
                                 <span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-wider rounded-lg truncate max-w-[70%]" 
                                     x-text="note.category + ' › ' + note.subCategory"></span>
                                 
-                                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" x-show="isUnlocked">
-                                    <template x-if="viewMode === 'active'">
+                                <div class="flex gap-1" :class="viewMode === 'trash' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 transition-opacity'">
+                                    <template x-if="viewMode === 'active' && isUnlocked">
                                         <div class="flex gap-1">
                                             <button @click.stop="editNote(note)" class="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-500 rounded-lg transition-all" title="Chỉnh sửa">
                                                 <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
@@ -760,11 +770,12 @@ body {
                                         </div>
                                     </template>
                                     <template x-if="viewMode === 'trash'">
-                                         <div class="flex gap-1">
-                                            <button @click.stop="restoreNote(note.id)" class="p-1.5 hover:bg-emerald-50 text-emerald-500 rounded-lg transition-all" title="Khôi phục">
-                                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                                         <div class="flex items-center gap-1.5">
+                                            <button @click.stop="restoreNote(note.id)" class="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold text-xs rounded-lg transition-all shadow-sm border border-emerald-100 dark:border-emerald-800" title="Khôi phục ghi chú">
+                                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                                <span>Khôi phục</span>
                                             </button>
-                                            <button @click.stop="hardDeleteNote(note.id)" class="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-all" title="Xóa vĩnh viễn">
+                                            <button @click.stop="hardDeleteNote(note.id)" class="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-500 rounded-lg transition-all" title="Xóa vĩnh viễn">
                                                 <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
                                             </button>
                                         </div>
@@ -843,6 +854,18 @@ body {
                         <button @click="editNote(selectedNote); showReadModal=false" class="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full font-bold text-xs transition-colors shadow-sm border border-blue-100">
                             <i data-lucide="edit-3" class="w-4 h-4"></i>
                             <span>Chỉnh sửa</span>
+                        </button>
+                    </div>
+                </template>
+                <template x-if="selectedNote && viewMode === 'trash'">
+                     <div class="flex gap-2">
+                        <button @click="restoreNote(selectedNote.id); showReadModal=false" class="flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-full font-bold text-xs transition-colors shadow-sm border border-emerald-100">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                            <span>Khôi phục ghi chú</span>
+                        </button>
+                        <button @click="hardDeleteNote(selectedNote.id); showReadModal=false" class="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-full font-bold text-xs transition-colors shadow-sm border border-red-100">
+                            <i data-lucide="x-circle" class="w-4 h-4"></i>
+                            <span>Xóa vĩnh viễn</span>
                         </button>
                     </div>
                 </template>
@@ -1440,17 +1463,48 @@ body {
                         note.updatedAt = new Date().toISOString();
                         this.saveToLocal();
                         this.showToast("Đã khôi phục ghi chú");
+                        this.refreshIcons();
                         try { await this.fetchAPI('/note', 'POST', note); } catch(e) {}
                     }
                 },
 
+                // Restore all notes from trash
+                async restoreAllTrash() {
+                    const trashNotes = this.notes.filter(n => n.deletedAt);
+                    if (trashNotes.length === 0) {
+                        this.showToast("Thùng rác trống");
+                        return;
+                    }
+                    trashNotes.forEach(n => {
+                        n.deletedAt = null;
+                        n.updatedAt = new Date().toISOString();
+                    });
+                    this.saveToLocal();
+                    this.showToast(`Đã khôi phục ${trashNotes.length} ghi chú`);
+                    this.refreshIcons();
+                },
+
+                // Empty entire trash
+                async emptyTrash() {
+                    const trashNotes = this.notes.filter(n => n.deletedAt);
+                    if (trashNotes.length === 0) {
+                        this.showToast("Thùng rác trống");
+                        return;
+                    }
+                    if (!confirm(`Hành động này không thể hoàn tác. Xóa vĩnh viễn tất cả ${trashNotes.length} ghi chú trong thùng rác?`)) return;
+                    const trashIds = new Set(trashNotes.map(n => n.id));
+                    this.notes = this.notes.filter(n => !trashIds.has(n.id));
+                    this.saveToLocal();
+                    this.showToast("Đã dọn sạch thùng rác");
+                },
+
                 // Hard Delete
-                async hardDeleteNote(id) {
-                    if (!confirm('Hành động này không thể hoàn tác. Xóa vĩnh viễn?')) return;
+                async hardDeleteNote(id, askConfirm = true) {
+                    if (askConfirm && !confirm('Hành động này không thể hoàn tác. Xóa vĩnh viễn?')) return;
                     
                     this.notes = this.notes.filter(n => n.id !== id);
                     this.saveToLocal();
-                    this.showToast("Đã xóa vĩnh viễn");
+                    if (askConfirm) this.showToast("Đã xóa vĩnh viễn");
 
                     try {
                         await this.fetchAPI(`/note/${id}`, 'DELETE');
@@ -1463,8 +1517,10 @@ body {
                     
                     const oldNotes = this.notes.filter(n => n.deletedAt && new Date(n.deletedAt) < thirtyDaysAgo);
                     if (oldNotes.length > 0) {
-                        oldNotes.forEach(n => this.hardDeleteNote(n.id));
-                        console.log(`Auto cleaned ${oldNotes.length} old notes`);
+                        const oldIds = new Set(oldNotes.map(n => n.id));
+                        this.notes = this.notes.filter(n => !oldIds.has(n.id));
+                        this.saveToLocal();
+                        console.log(`Auto cleaned ${oldNotes.length} expired trash notes without prompt`);
                     }
                 },
 
