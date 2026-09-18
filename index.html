@@ -1709,5 +1709,15 @@ document.addEventListener('keydown', function(e) {
   applyHiHiTheme(saved);
 })();
 </script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js').catch(function(err) {
+      console.log('SW registration skipped:', err);
+    });
+  });
+}
+</script>
+
 </body>
 </html>
