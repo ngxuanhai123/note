@@ -66,6 +66,32 @@
         .markdown-content code { background: rgba(0,0,0,0.05); padding: 0.2em 0.4em; border-radius: 0.25em; font-size: 0.9em; font-family: monospace; }
         .dark .markdown-content code { background: rgba(255,255,255,0.1); }
 
+        /* === LINK STYLES trong Markdown === */
+        .markdown-content a {
+            color: var(--theme-color);
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            text-decoration-thickness: 1.5px;
+            border-radius: 3px;
+            padding: 0 2px;
+            transition: background 0.15s, color 0.15s;
+            word-break: break-all;
+        }
+        .markdown-content a:hover {
+            background: color-mix(in srgb, var(--theme-color) 12%, transparent);
+            text-decoration-color: var(--theme-color);
+        }
+        .markdown-content a::after {
+            content: ' ↗';
+            font-size: 0.7em;
+            opacity: 0.6;
+            vertical-align: super;
+        }
+        .dark .markdown-content a {
+            color: color-mix(in srgb, var(--theme-color) 85%, #7dd3fc);
+        }
+
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--theme-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         /* Thêm vào trong thẻ <style> */
@@ -1126,6 +1152,36 @@ body {
         const KEY_NOTES = 'HIHI_NOTES_CACHE';
         const KEY_CATS = 'HIHI_CATS_CACHE';
         const KEY_AUTH = 'HIHI_AUTH_TOKEN';
+
+        // === CẤU HÌNH MARKED: Link mở tab mới + auto-linkify URL thuần text ===
+        (function setupMarked() {
+            const renderer = new marked.Renderer();
+
+            // Link trong Markdown [text](url) → mở tab mới, an toàn
+            renderer.link = function(href, title, text) {
+                // marked v5+ có thể truyền object
+                if (typeof href === 'object' && href !== null) {
+                    title = href.title;
+                    text = href.text;
+                    href = href.href;
+                }
+                const safeHref = (href || '').replace(/javascript:/gi, '');
+                const titleAttr = title ? ` title="${title}"` : '';
+                return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
+            };
+
+            // Paragraph: auto-linkify plain text URLs (http/https) không nằm trong markdown link
+            renderer.paragraph = function(text) {
+                if (typeof text === 'object' && text !== null && text.text) text = text.text;
+                const linked = text.replace(
+                    /(?<!['"=(])(https?:\/\/[^\s<>"')\]]+)/g,
+                    (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+                );
+                return `<p>${linked}</p>\n`;
+            };
+
+            marked.use({ renderer, breaks: true });
+        })();
         
         function appData() {
             return {
