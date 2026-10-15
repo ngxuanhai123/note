@@ -927,7 +927,15 @@ body {
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block ml-1">Khu vực</label>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-[10px] font-black uppercase text-slate-400 ml-1">Khu vực</label>
+                                    <button @click="showInlineCatForm = !showInlineCatForm; showInlineSubForm = false"
+                                        :class="showInlineCatForm ? 'bg-primary-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
+                                        class="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase transition-all hover:brightness-110"
+                                        title="Thêm khu vực mới">
+                                        <i data-lucide="plus" class="w-3 h-3"></i> Thêm mới
+                                    </button>
+                                </div>
                                 <div class="relative">
                                     <select x-model="newNote.category" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 outline-none font-bold text-sm appearance-none cursor-pointer">
                                         <template x-for="cat in categories" :key="cat.id">
@@ -936,9 +944,37 @@ body {
                                     </select>
                                     <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
                                 </div>
+                                <!-- Inline form: Thêm khu vực mới -->
+                                <div x-show="showInlineCatForm" x-cloak
+                                    x-transition:enter="transition ease-out duration-150"
+                                    x-transition:enter-start="opacity-0 -translate-y-1"
+                                    x-transition:enter-end="opacity-100 translate-y-0"
+                                    class="mt-2 p-3 bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-900 rounded-xl space-y-2">
+                                    <p class="text-[9px] font-black uppercase text-primary-600 dark:text-primary-400">Khu vực mới</p>
+                                    <div class="flex gap-2">
+                                        <input type="text" x-model="inlineNewCatName"
+                                            @keyup.enter="inlineAddCategory()"
+                                            placeholder="Tên khu vực (vd: 🏥 Nội khoa)"
+                                            class="flex-1 bg-white dark:bg-slate-800 p-2 px-3 rounded-lg border border-slate-200 dark:border-slate-700 outline-none font-bold text-xs focus:border-primary-400">
+                                        <input type="color" x-model="inlineNewCatColor"
+                                            class="w-9 h-9 p-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
+                                        <button @click="inlineAddCategory()"
+                                            class="bg-primary-600 hover:bg-primary-700 text-white px-3 rounded-lg text-[9px] font-black uppercase shadow-sm transition-colors">OK</button>
+                                        <button @click="showInlineCatForm = false"
+                                            class="text-slate-400 hover:text-slate-600 px-2 rounded-lg text-[9px] font-bold">✕</button>
+                                    </div>
+                                </div>
                             </div>
                             <div>
-                                <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block ml-1">Chủ đề con</label>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-[10px] font-black uppercase text-slate-400 ml-1">Chủ đề con</label>
+                                    <button @click="showInlineSubForm = !showInlineSubForm; showInlineCatForm = false"
+                                        :class="showInlineSubForm ? 'bg-primary-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
+                                        class="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase transition-all hover:brightness-110"
+                                        title="Thêm chủ đề con mới">
+                                        <i data-lucide="plus" class="w-3 h-3"></i> Thêm mới
+                                    </button>
+                                </div>
                                 <div class="relative">
                                     <select x-model="newNote.subCategory" class="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 outline-none font-bold text-sm appearance-none cursor-pointer">
                                         <template x-for="sub in getAvailableSubs(newNote.category)" :key="sub">
@@ -946,6 +982,24 @@ body {
                                         </template>
                                     </select>
                                     <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                                </div>
+                                <!-- Inline form: Thêm chủ đề con -->
+                                <div x-show="showInlineSubForm" x-cloak
+                                    x-transition:enter="transition ease-out duration-150"
+                                    x-transition:enter-start="opacity-0 -translate-y-1"
+                                    x-transition:enter-end="opacity-100 translate-y-0"
+                                    class="mt-2 p-3 bg-primary-50 dark:bg-primary-950/30 border border-primary-200 dark:border-primary-900 rounded-xl space-y-2">
+                                    <p class="text-[9px] font-black uppercase text-primary-600 dark:text-primary-400">Chủ đề con mới</p>
+                                    <div class="flex gap-2">
+                                        <input type="text" x-model="inlineNewSubName"
+                                            @keyup.enter="inlineAddSub()"
+                                            placeholder="Tên chủ đề con..."
+                                            class="flex-1 bg-white dark:bg-slate-800 p-2 px-3 rounded-lg border border-slate-200 dark:border-slate-700 outline-none font-bold text-xs focus:border-primary-400">
+                                        <button @click="inlineAddSub()"
+                                            class="bg-primary-600 hover:bg-primary-700 text-white px-3 rounded-lg text-[9px] font-black uppercase shadow-sm transition-colors">OK</button>
+                                        <button @click="showInlineSubForm = false"
+                                            class="text-slate-400 hover:text-slate-600 px-2 rounded-lg text-[9px] font-bold">✕</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1109,6 +1163,13 @@ body {
                 syncStatus: 'synced',
                 syncStatusText: 'Đồng bộ',
                 imgServerStatus: 'online',
+
+                // Inline quick-add state cho modal tạo ghi chú
+                showInlineCatForm: false,
+                inlineNewCatName: '',
+                inlineNewCatColor: '#0d9488',
+                showInlineSubForm: false,
+                inlineNewSubName: '',
 
                 categories: [],
                 notes: [],
@@ -1628,6 +1689,46 @@ body {
                         try { await this.fetchAPI('/category', 'POST', cat); } catch(e) {}
                     }
                 },
+
+                // Inline quick-add trong modal tạo ghi chú
+                async inlineAddCategory() {
+                    const name = this.inlineNewCatName.trim();
+                    if (!name) return;
+                    if (this.categories.find(c => c.name === name)) {
+                        this.showToast('Khu vực này đã tồn tại!', 'error');
+                        return;
+                    }
+                    const newCat = { id: crypto.randomUUID(), name, color: this.inlineNewCatColor, subs: [] };
+                    this.categories.push(newCat);
+                    this.saveToLocal();
+                    this.newNote.category = name;
+                    this.newNote.subCategory = '';
+                    this.inlineNewCatName = '';
+                    this.inlineNewCatColor = '#0d9488';
+                    this.showInlineCatForm = false;
+                    this.showToast(`Đã thêm khu vực "${name}"!`, 'success');
+                    try { await this.fetchAPI('/category', 'POST', newCat); } catch(e) {}
+                },
+                async inlineAddSub() {
+                    const subName = this.inlineNewSubName.trim();
+                    if (!subName) return;
+                    const cat = this.categories.find(c => c.name === this.newNote.category);
+                    if (!cat) {
+                        this.showToast('Vui lòng chọn khu vực trước!', 'error');
+                        return;
+                    }
+                    if (cat.subs.includes(subName)) {
+                        this.showToast('Chủ đề con này đã tồn tại!', 'error');
+                        return;
+                    }
+                    cat.subs.push(subName);
+                    this.saveToLocal();
+                    this.newNote.subCategory = subName;
+                    this.inlineNewSubName = '';
+                    this.showInlineSubForm = false;
+                    this.showToast(`Đã thêm chủ đề con "${subName}"!`, 'success');
+                    try { await this.fetchAPI('/category', 'POST', cat); } catch(e) {}
+                },
                 async deleteSubCategory(catId, subName) {
                     const cat = this.categories.find(c => c.id === catId);
                     if (cat) {
@@ -1669,6 +1770,10 @@ body {
                     this.isEditing = false;
                     this.selectedFile = null;
                     this.uploadPreview = null;
+                    this.showInlineCatForm = false;
+                    this.showInlineSubForm = false;
+                    this.inlineNewCatName = '';
+                    this.inlineNewSubName = '';
                     this.resetNewNote();
                     this.showAddModal = true;
                     this.refreshIcons();
@@ -1678,6 +1783,10 @@ body {
                     this.currentEditId = note.id;
                     this.selectedFile = null;
                     this.uploadPreview = null;
+                    this.showInlineCatForm = false;
+                    this.showInlineSubForm = false;
+                    this.inlineNewCatName = '';
+                    this.inlineNewSubName = '';
                     this.newNote = {
                         title: note.title,
                         category: note.category,
