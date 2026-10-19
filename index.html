@@ -14,6 +14,9 @@
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['"Be Vietnam Pro"', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
                     colors: {
                         primary: {
                             50: '#f0fdfa', 100: '#ccfbf1', 500: 'var(--theme-color)', 
@@ -21,8 +24,8 @@
                         }
                     },
                     animation: {
-                        'slide-in': 'slideIn 0.3s ease-out forwards',
-                        'fade-out': 'fadeOut 0.3s ease-in forwards',
+                        'slide-in': 'slideIn 0.25s ease-out forwards',
+                        'fade-out': 'fadeOut 0.25s ease-in forwards',
                     },
                     keyframes: {
                         slideIn: {
@@ -39,6 +42,16 @@
         }
     </script>
     <style>
+        * { font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif; }
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .dark body, html.dark body, body.dark-mode {
+            background-color: #090d16;
+            color: #f8fafc;
+        }
         [x-cloak] { display: none !important; }
         :root { --theme-color: #0d9488; --theme-rgb: 13, 148, 136; }
         
@@ -508,43 +521,77 @@ body {
             <div class="hihi-grid-name">Trang Chủ</div>
             <div class="hihi-grid-desc">Cổng liên kết học tập</div>
           </div>
-        </a>\n        <a href="https://ngxuanhai123.github.io/tuvung/" class="hihi-grid-card">
+      </a>
+      <a href="https://ngxuanhai123.github.io/tuvung/" class="hihi-grid-card">
           <div class="hihi-grid-icon hihi-icon-tuvung"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
           <div class="hihi-grid-info">
             <div class="hihi-grid-name">Từ Vựng</div>
             <div class="hihi-grid-desc">Flashcard & phát âm</div>
           </div>
-        </a>\n        <a href="https://ngxuanhai123.github.io/chinhta/" class="hihi-grid-card">
+      </a>
+      <a href="https://ngxuanhai123.github.io/chinhta/" class="hihi-grid-card">
           <div class="hihi-grid-icon hihi-icon-chinhta"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6" y2="8"/><line x1="10" y1="8" x2="10" y2="8"/><line x1="14" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="18" y2="8"/><line x1="6" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="18" y2="12"/><line x1="10" y1="16" x2="14" y2="16"/></svg></div>
           <div class="hihi-grid-info">
             <div class="hihi-grid-name">Chính Tả</div>
             <div class="hihi-grid-desc">Nghe chép chính tả</div>
           </div>
-        </a>\n        <a href="https://ngxuanhai123.github.io/dich/" class="hihi-grid-card">
+      </a>
+      <a href="https://ngxuanhai123.github.io/dich/" class="hihi-grid-card">
           <div class="hihi-grid-icon hihi-icon-dich"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg></div>
           <div class="hihi-grid-info">
             <div class="hihi-grid-name">Luyện Dịch</div>
             <div class="hihi-grid-desc">Dịch câu & ngữ cảnh</div>
           </div>
-        </a>\n        <a href="https://ngxuanhai123.github.io/note/" class="hihi-grid-card current">
+      </a>
+      <a href="https://ngxuanhai123.github.io/note/" class="hihi-grid-card current">
           <div class="hihi-grid-icon hihi-icon-note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
           <div class="hihi-grid-info">
             <div class="hihi-grid-name">Ghi Chú</div>
             <div class="hihi-grid-desc">Lưu trữ cá nhân</div>
           </div>
-        </a>\n        <a href="https://ngxuanhai123.github.io/bamhuyet/" class="hihi-grid-card">
+      </a>
+      <a href="https://ngxuanhai123.github.io/bamhuyet/" class="hihi-grid-card">
           <div class="hihi-grid-icon hihi-icon-bamhuyet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></div>
           <div class="hihi-grid-info">
             <div class="hihi-grid-name">Bấm Huyệt</div>
             <div class="hihi-grid-desc">Sức khỏe trị liệu</div>
           </div>
-        </a>\n        <a href="https://ngxuanhai123.github.io/rosa/" class="hihi-grid-card">
+      </a>
+      <a href="https://ngxuanhai123.github.io/rosa/" class="hihi-grid-card">
           <div class="hihi-grid-icon hihi-icon-rosa"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M7 8h10"/></svg></div>
           <div class="hihi-grid-info">
             <div class="hihi-grid-name">Mân Côi</div>
             <div class="hihi-grid-desc">Lần hạt Mân Côi</div>
           </div>
-        </a>
+      </a>
+      <a href="https://ngxuanhai123.github.io/dich-ios/" class="hihi-grid-card">
+          <div class="hihi-grid-icon" style="background: linear-gradient(135deg, #0284c7, #0369a1);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg></div>
+          <div class="hihi-grid-info">
+            <div class="hihi-grid-name">Dịch iOS</div>
+            <div class="hihi-grid-desc">Dịch màn hình AI</div>
+          </div>
+      </a>
+      <a href="https://ngxuanhai123.github.io/indo/" class="hihi-grid-card">
+          <div class="hihi-grid-icon" style="background: linear-gradient(135deg, #ef4444, #b91c1c);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg></div>
+          <div class="hihi-grid-info">
+            <div class="hihi-grid-name">Tiếng Indo</div>
+            <div class="hihi-grid-desc">Học tiếng Indonesia</div>
+          </div>
+      </a>
+      <a href="https://ngxuanhai123.github.io/nhachocbai/" class="hihi-grid-card">
+          <div class="hihi-grid-icon" style="background: linear-gradient(135deg, #84cc16, #4d7c0f);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
+          <div class="hihi-grid-info">
+            <div class="hihi-grid-name">Nhắc Học Bài</div>
+            <div class="hihi-grid-desc">Nhắc nhở hàng ngày</div>
+          </div>
+      </a>
+      <a href="https://ngxuanhai123.github.io/HiHi-Analytics/" class="hihi-grid-card">
+          <div class="hihi-grid-icon" style="background: linear-gradient(135deg, #6366f1, #4338ca);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+          <div class="hihi-grid-info">
+            <div class="hihi-grid-name">HiHi Analytics</div>
+            <div class="hihi-grid-desc">Đo lường & thống kê</div>
+          </div>
+      </a>
     </div>
   </div>
 </div>
@@ -614,7 +661,7 @@ body {
                 <button @click="handleLockAction()" :class="isUnlocked ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/20' : 'text-slate-400 bg-slate-100 dark:bg-slate-800'" class="p-2.5 rounded-xl transition-all" :title="isUnlocked ? 'Bấm để khóa (Đăng xuất)' : 'Bấm để mở khóa'">
                     <i :data-lucide="isUnlocked ? 'unlock' : 'lock'" class="w-5 h-5"></i>
                 </button>
-                <button @click="darkMode = !darkMode" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
+                <button @click="toggleNoteTheme()" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all" title="Chuyển chế độ Sáng / Tối">
                     <i x-show="!darkMode" data-lucide="moon" class="w-5 h-5"></i>
                     <i x-show="darkMode" data-lucide="sun" class="w-5 h-5"></i>
                 </button>
@@ -1185,7 +1232,15 @@ body {
         
         function appData() {
             return {
-                darkMode: false,
+                darkMode: (localStorage.getItem('hihi-theme') === 'dark') || document.documentElement.classList.contains('dark'),
+                toggleNoteTheme() {
+                    if (typeof toggleHiHiSysTheme === 'function') {
+                        toggleHiHiSysTheme();
+                    } else {
+                        this.darkMode = !this.darkMode;
+                        document.documentElement.classList.toggle('dark', this.darkMode);
+                    }
+                },
                 isLoading: false,
                 loadingText: 'Đang xử lý...',
                 isUnlocked: false,
@@ -1897,6 +1952,12 @@ function applyHiHiTheme(theme) {
     sun.style.display = theme === 'light' ? 'block' : 'none';
     moon.style.display = theme === 'light' ? 'none' : 'block';
   }
+  try {
+    const el = document.querySelector('[x-data]');
+    if (el && window.Alpine && Alpine.$data) {
+      Alpine.$data(el).darkMode = (theme === 'dark');
+    }
+  } catch(e) {}
 }
 
 function toggleHiHiSysTheme() {
