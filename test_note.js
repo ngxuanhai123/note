@@ -61,7 +61,7 @@ async function runTests() {
   // TEST 4: Kiểm tra kết nối Cloudflare Storage (/data)
   try {
     const t0 = Date.now();
-    const res = await fetch('https://ai-free.ngxuanhai123.workers.dev/data');
+    const res = await fetch('https://luuhihi.ngxuanhai123.workers.dev/data');
     const lat = Date.now() - t0;
     const data = await res.json();
     const passed = res.status === 200 && Array.isArray(data.notes);
