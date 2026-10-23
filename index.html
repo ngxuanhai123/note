@@ -466,6 +466,529 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
+
+/* === HIHI SHARED SYSTEM (AUTH, LEADERBOARD, ADMIN STUDIO) === */
+.hihi-auth-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--hihi-nav-text-hover, #f1f5f9);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.hihi-auth-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #38bdf8;
+}
+[data-theme="light"] .hihi-auth-btn, html.light .hihi-auth-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #0f172a;
+}
+.hihi-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px 3px 4px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.hihi-user-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+[data-theme="light"] .hihi-user-pill, html.light .hihi-user-pill {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+.hihi-user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #3b82f6;
+}
+.hihi-user-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--hihi-nav-text-hover, #f1f5f9);
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-theme="light"] .hihi-user-name, html.light .hihi-user-name {
+  color: #0f172a;
+}
+.hihi-admin-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #d97706, #b45309);
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+/* User Dropdown */
+.hihi-user-dropdown {
+  position: fixed;
+  top: calc(var(--hihi-nav-h, 52px) + 6px);
+  right: 14px;
+  width: 270px;
+  background: var(--hihi-modal-bg, rgba(30, 41, 59, 0.98));
+  border: 1px solid var(--hihi-modal-border, rgba(255, 255, 255, 0.12));
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000001;
+  font-family: 'Be Vietnam Pro', sans-serif;
+}
+.hihi-user-dropdown.active {
+  display: flex;
+}
+[data-theme="light"] .hihi-user-dropdown, html.light .hihi-user-dropdown {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+.hihi-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+[data-theme="light"] .hihi-dropdown-header, html.light .hihi-dropdown-header {
+  border-bottom-color: rgba(0,0,0,0.06);
+}
+.hihi-dropdown-scores {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: rgba(255,255,255,0.03);
+  padding: 8px;
+  border-radius: 10px;
+  text-align: center;
+}
+[data-theme="light"] .hihi-dropdown-scores, html.light .hihi-dropdown-scores {
+  background: rgba(0,0,0,0.02);
+}
+.hihi-score-item .score-val {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+.hihi-score-item .score-lbl {
+  font-size: 0.65rem;
+  color: var(--hihi-nav-text, #94a3b8);
+}
+.hihi-dropdown-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hihi-dropdown-btn {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--hihi-card-text, #f1f5f9);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.hihi-dropdown-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #38bdf8;
+}
+[data-theme="light"] .hihi-dropdown-btn, html.light .hihi-dropdown-btn {
+  background: rgba(0,0,0,0.03);
+  border-color: rgba(0,0,0,0.06);
+  color: #0f172a;
+}
+.hihi-dropdown-btn.admin-btn {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.15), rgba(180, 83, 9, 0.15));
+  border-color: rgba(217, 119, 6, 0.4);
+  color: #fbbf24;
+}
+.hihi-dropdown-btn.logout-btn {
+  color: #ef4444;
+}
+.hihi-dropdown-btn.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+/* LEADERBOARD MODAL & ADMIN MODAL (Full Popups) */
+.hihi-suite-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 1000005;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  font-family: 'Be Vietnam Pro', sans-serif;
+}
+.hihi-suite-modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.hihi-suite-modal {
+  width: 100%;
+  max-width: 680px;
+  max-height: 88vh;
+  background: var(--hihi-modal-bg, rgba(30, 41, 59, 0.98));
+  border: 1px solid var(--hihi-modal-border, rgba(255, 255, 255, 0.14));
+  border-radius: 20px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+[data-theme="light"] .hihi-suite-modal, html.light .hihi-suite-modal {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+}
+.hihi-suite-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+[data-theme="light"] .hihi-suite-modal-header, html.light .hihi-suite-modal-header {
+  border-bottom-color: rgba(0,0,0,0.06);
+}
+.hihi-suite-modal-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--hihi-card-text, #f1f5f9);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+[data-theme="light"] .hihi-suite-modal-title, html.light .hihi-suite-modal-title {
+  color: #0f172a;
+}
+.hihi-suite-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--hihi-nav-text, #94a3b8);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.hihi-suite-modal-close:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+.hihi-suite-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 4px;
+}
+
+/* HiHi Topic Picker Language Filter Pills */
+.hihi-topic-lang-pill {
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  color: var(--hihi-nav-text, #94a3b8);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+[data-theme="light"] .hihi-topic-lang-pill, html.light .hihi-topic-lang-pill {
+  border-color: rgba(0,0,0,0.1);
+  background: rgba(0,0,0,0.04);
+  color: #475569;
+}
+.hihi-topic-lang-pill:hover {
+  background: rgba(56,189,248,0.15);
+  border-color: rgba(56,189,248,0.4);
+  color: #38bdf8;
+}
+.hihi-topic-lang-pill.active {
+  background: #38bdf8 !important;
+  color: #0f172a !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 2px 8px rgba(56,189,248,0.3);
+}
+
+/* Leaderboard Specific Styles */
+
+/* HiHi Leaderboard Period & Month Filters */
+.hihi-lb-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.hihi-lb-pill-group {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px;
+  border-radius: 8px;
+  gap: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.hihi-lb-period-btn {
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--hihi-nav-text, #94a3b8);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.hihi-lb-period-btn.active {
+  background: #38bdf8;
+  color: #0f172a;
+}
+.hihi-lb-select {
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: var(--hihi-card-text, #f1f5f9);
+  font-size: 0.78rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+[data-theme="light"] .hihi-lb-filter-row {
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+[data-theme="light"] .hihi-lb-pill-group {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+[data-theme="light"] .hihi-lb-period-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+}
+[data-theme="light"] .hihi-lb-select {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.hihi-lb-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+.hihi-lb-tab {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--hihi-nav-text, #94a3b8);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.hihi-lb-tab.active {
+  background: var(--hihi-nav-active-bg, rgba(56, 189, 248, 0.12));
+  color: var(--hihi-nav-active-text, #38bdf8);
+}
+.hihi-lb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.hihi-lb-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--hihi-nav-text, #94a3b8);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.hihi-lb-table td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.85rem;
+  color: var(--hihi-card-text, #f1f5f9);
+}
+[data-theme="light"] .hihi-lb-table td, html.light .hihi-lb-table td {
+  color: #0f172a;
+}
+.hihi-lb-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hihi-lb-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #3b82f6;
+  object-fit: cover;
+}
+.hihi-lb-rank {
+  font-weight: 700;
+  width: 30px;
+}
+.hihi-lb-rank.rank-1 { color: #f59e0b; font-size: 1.1rem; }
+.hihi-lb-rank.rank-2 { color: #94a3b8; font-size: 1rem; }
+.hihi-lb-rank.rank-3 { color: #d97706; font-size: 0.95rem; }
+
+/* Admin Studio Specific Styles */
+.hihi-admin-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.hihi-admin-input, .hihi-admin-textarea, .hihi-admin-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--hihi-card-text, #f1f5f9);
+  font-size: 0.88rem;
+  font-family: inherit;
+  outline: none;
+}
+.hihi-admin-input:focus, .hihi-admin-textarea:focus {
+  border-color: #f59e0b;
+}
+[data-theme="light"] .hihi-admin-input, [data-theme="light"] .hihi-admin-textarea {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+.hihi-admin-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.hihi-admin-tab-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: var(--hihi-nav-text, #94a3b8);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.hihi-admin-tab-btn.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+.hihi-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin-top: 10px;
+}
+.hihi-preview-table th {
+  background: rgba(255,255,255,0.05);
+  padding: 6px 8px;
+  text-align: left;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.hihi-preview-table td {
+  padding: 6px 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.hihi-admin-btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.hihi-btn-primary {
+  padding: 8px 16px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s;
+}
+.hihi-btn-secondary {
+  padding: 8px 16px;
+  border-radius: 9px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--hihi-card-text, #f1f5f9);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+[data-theme="light"] .hihi-btn-secondary {
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.1);
+  color: #0f172a;
+}
 </style>
 </head>
 <body class="bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-500 min-h-screen font-sans flex flex-col">
@@ -501,6 +1024,9 @@ body {
           <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
         </svg>
       </button>
+
+      <!-- BẢNG VÀNG TOÀN HỆ SINH THÁI -->
+      <button class="hihi-auth-btn" onclick="window.hihiOpenLeaderboard()" title="Bảng Xếp Hạng Toàn Hệ Sinh Thái" style="background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);color:#fbbf24;margin-right:6px;"><i class="fas fa-trophy" style="color:#f59e0b;"></i><span>Bảng Vàng</span></button>
     </div>
   </div>
 </header>
@@ -570,28 +1096,28 @@ body {
           </div>
       </a>
       <a href="https://ngxuanhai123.github.io/dich-ios/" class="hihi-grid-card">
-          <div class="hihi-grid-icon" style="background: linear-gradient(135deg, #0284c7, #0369a1);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg></div>
+          <div class="hihi-grid-icon hihi-icon-dich-ios" style="background: linear-gradient(135deg, #0284c7, #0369a1);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg></div>
           <div class="hihi-grid-info">
             <div class="hihi-grid-name">Dịch iOS</div>
             <div class="hihi-grid-desc">Dịch màn hình AI</div>
           </div>
       </a>
       <a href="https://ngxuanhai123.github.io/indo/" class="hihi-grid-card">
-          <div class="hihi-grid-icon" style="background: linear-gradient(135deg, #ef4444, #b91c1c);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg></div>
+          <div class="hihi-grid-icon hihi-icon-indo" style="background: linear-gradient(135deg, #ef4444, #b91c1c);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg></div>
           <div class="hihi-grid-info">
             <div class="hihi-grid-name">Tiếng Indo</div>
             <div class="hihi-grid-desc">Học tiếng Indonesia</div>
           </div>
       </a>
       <a href="https://ngxuanhai123.github.io/nhachocbai/" class="hihi-grid-card">
-          <div class="hihi-grid-icon" style="background: linear-gradient(135deg, #84cc16, #4d7c0f);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
+          <div class="hihi-grid-icon hihi-icon-nhachocbai" style="background: linear-gradient(135deg, #84cc16, #4d7c0f);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
           <div class="hihi-grid-info">
             <div class="hihi-grid-name">Nhắc Học Bài</div>
             <div class="hihi-grid-desc">Nhắc nhở hàng ngày</div>
           </div>
       </a>
       <a href="https://ngxuanhai123.github.io/HiHi-Analytics/" class="hihi-grid-card">
-          <div class="hihi-grid-icon" style="background: linear-gradient(135deg, #6366f1, #4338ca);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+          <div class="hihi-grid-icon hihi-icon-analytics" style="background: linear-gradient(135deg, #6366f1, #4338ca);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
           <div class="hihi-grid-info">
             <div class="hihi-grid-name">HiHi Analytics</div>
             <div class="hihi-grid-desc">Đo lường & thống kê</div>
@@ -1957,12 +2483,6 @@ function applyHiHiTheme(theme) {
     sun.style.display = theme === 'light' ? 'block' : 'none';
     moon.style.display = theme === 'light' ? 'none' : 'block';
   }
-  try {
-    const el = document.querySelector('[x-data]');
-    if (el && window.Alpine && Alpine.$data) {
-      Alpine.$data(el).darkMode = (theme === 'dark');
-    }
-  } catch(e) {}
 }
 
 function toggleHiHiSysTheme() {
@@ -1978,11 +2498,22 @@ function toggleHiHiSysMenu(e) {
   if (m) m.classList.toggle('active');
 }
 
+function openHiHiSysMenu(e) {
+  if (e) e.stopPropagation();
+  var m = document.getElementById('hihiSysModalOverlay');
+  if (m) m.classList.add('active');
+}
+
 function closeHiHiSysMenu(e) {
   if (e && e.target !== e.currentTarget && !e.target.classList.contains('hihi-modal-close')) return;
   var m = document.getElementById('hihiSysModalOverlay');
   if (m) m.classList.remove('active');
 }
+
+window.openHiHiSysMenu = openHiHiSysMenu;
+window.toggleHiHiSysMenu = toggleHiHiSysMenu;
+window.closeHiHiSysMenu = closeHiHiSysMenu;
+window.toggleHiHiSysTheme = toggleHiHiSysTheme;
 
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeHiHiSysMenu();
