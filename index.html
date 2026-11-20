@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" data-theme="light">
+<html lang="vi" x-data="appData()" :class="{ 'dark': darkMode }" :style="'--theme-color: ' + currentThemeColor" data-theme="light">
 <head>
     <!-- Real-time Error Monitoring & Sentry -->
     <script src="hihi-monitor.js"></script>
@@ -1486,10 +1486,31 @@ body {
                             </div>
                         </template>
 
-                        <template x-if="note.image">
+                        <!-- Card Banner: Image -->
+                        <template x-if="isImageNote(note) && (note.image || note.fileUrl)">
                             <div class="h-44 w-full overflow-hidden relative">
-                                <img :src="note.image" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                                <img :src="note.image || note.fileUrl" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                            </div>
+                        </template>
+
+                        <!-- Card Banner: Document / Audio / Video / Archive / File -->
+                        <template x-if="!isImageNote(note) && (note.fileUrl || note.fileName)">
+                            <div class="px-5 py-3.5 bg-slate-50 dark:bg-slate-800/70 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-sm"
+                                     :class="getFileBadge(note.fileType, note.fileName).bg">
+                                    <span x-text="getFileExtension(note.fileName) || 'FILE'"></span>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate" x-text="note.fileName || 'Tệp đính kèm'"></div>
+                                    <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                        <span x-text="formatFileSize(note.fileSize)"></span>
+                                        <span class="inline-flex items-center gap-0.5 text-primary-600 dark:text-primary-400 font-bold uppercase" x-text="detectFileCategory(note.fileType, note.fileName)"></span>
+                                    </div>
+                                </div>
+                                <span class="p-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-400 group-hover:text-primary-600 shadow-sm">
+                                    <i data-lucide="paperclip" class="w-4 h-4"></i>
+                                </span>
                             </div>
                         </template>
                         
@@ -1614,9 +1635,102 @@ body {
             <div class="overflow-y-auto flex-1 h-full scroll-smooth bg-white dark:bg-[#0f172a]" id="reader-content">
                 <template x-if="selectedNote">
                     <div>
-                        <template x-if="selectedNote.image">
-                            <div class="w-full relative">
-                                <img :src="selectedNote.image" class="w-full max-h-[600px] object-contain bg-slate-50 dark:bg-slate-900">
+                        <!-- Reader: Image Attachment -->
+                        <template x-if="isImageNote(selectedNote) && (selectedNote.image || selectedNote.fileUrl)">
+                            <div class="w-full relative bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+                                <img :src="selectedNote.image || selectedNote.fileUrl" class="w-full max-h-[600px] object-contain mx-auto">
+                                <div class="p-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-t border-slate-100 dark:border-slate-800 flex items-center justify-between px-6">
+                                    <div class="text-xs font-bold text-slate-600 dark:text-slate-300 truncate max-w-md" x-text="selectedNote.fileName || 'Hình ảnh đính kèm'"></div>
+                                    <div class="flex items-center gap-2">
+                                        <button @click="downloadFile(selectedNote.image || selectedNote.fileUrl, selectedNote.fileName || 'image.jpg')"
+                                                class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all">
+                                            <i data-lucide="download" class="w-3.5 h-3.5"></i> Tải ảnh
+                                        </button>
+                                        <a :href="selectedNote.image || selectedNote.fileUrl" target="_blank" rel="noopener noreferrer"
+                                           class="flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 hover:bg-primary-100 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 rounded-xl text-xs font-bold transition-all">
+                                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Xem ảnh gốc
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Reader: Audio Attachment -->
+                        <template x-if="isAudioNote(selectedNote) && (selectedNote.fileUrl || selectedNote.image)">
+                            <div class="max-w-4xl mx-auto px-6 sm:px-16 mt-6">
+                                <div class="p-5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-primary-500/10 to-transparent border border-purple-200 dark:border-purple-900/50 flex flex-col gap-3">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md">
+                                                <i data-lucide="music" class="w-5 h-5"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-black text-slate-800 dark:text-slate-100" x-text="selectedNote.fileName || 'Tệp âm thanh'"></div>
+                                                <div class="text-[10px] text-slate-400" x-text="formatFileSize(selectedNote.fileSize)"></div>
+                                            </div>
+                                        </div>
+                                        <button @click="downloadFile(selectedNote.fileUrl || selectedNote.image, selectedNote.fileName)"
+                                                class="flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all">
+                                            <i data-lucide="download" class="w-3.5 h-3.5"></i> Tải về
+                                        </button>
+                                    </div>
+                                    <audio controls class="w-full mt-2" :src="selectedNote.fileUrl || selectedNote.image"></audio>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Reader: Video Attachment -->
+                        <template x-if="isVideoNote(selectedNote) && (selectedNote.fileUrl || selectedNote.image)">
+                            <div class="max-w-4xl mx-auto px-6 sm:px-16 mt-6">
+                                <div class="rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-xl">
+                                    <video controls class="w-full max-h-[500px]" :src="selectedNote.fileUrl || selectedNote.image"></video>
+                                    <div class="p-3 bg-slate-900 text-white flex items-center justify-between">
+                                        <span class="text-xs font-bold truncate" x-text="selectedNote.fileName || 'Tệp video'"></span>
+                                        <button @click="downloadFile(selectedNote.fileUrl || selectedNote.image, selectedNote.fileName)"
+                                                class="flex items-center gap-1.5 px-3 py-1 bg-pink-600 hover:bg-pink-700 rounded-lg text-xs font-bold transition-all">
+                                            <i data-lucide="download" class="w-3.5 h-3.5"></i> Tải video
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Reader: Document / PDF / Sheet / Slide / Archive / Generic File -->
+                        <template x-if="!isImageNote(selectedNote) && !isAudioNote(selectedNote) && !isVideoNote(selectedNote) && (selectedNote.fileUrl || selectedNote.fileName)">
+                            <div class="max-w-4xl mx-auto px-6 sm:px-16 mt-6">
+                                <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                                    <div class="flex items-center gap-4 min-w-0">
+                                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 shadow-md"
+                                             :class="getFileBadge(selectedNote.fileType, selectedNote.fileName).bg">
+                                            <span x-text="getFileExtension(selectedNote.fileName) || 'FILE'"></span>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-sm font-black text-slate-800 dark:text-slate-100 truncate" x-text="selectedNote.fileName || 'Tài liệu đính kèm'"></div>
+                                            <div class="text-xs text-slate-400 flex items-center gap-2 mt-1">
+                                                <span x-text="formatFileSize(selectedNote.fileSize)"></span>
+                                                <span>•</span>
+                                                <span class="uppercase font-bold text-primary-600 dark:text-primary-400" x-text="detectFileCategory(selectedNote.fileType, selectedNote.fileName)"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                                        <button @click="downloadFile(selectedNote.fileUrl, selectedNote.fileName)"
+                                                class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-black shadow-sm transition-all">
+                                            <i data-lucide="download" class="w-4 h-4"></i> Tải về máy
+                                        </button>
+                                        <a :href="selectedNote.fileUrl" target="_blank" rel="noopener noreferrer"
+                                           class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-black transition-all">
+                                            <i data-lucide="external-link" class="w-4 h-4"></i> Mở tab mới
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <!-- Embedded preview for PDF -->
+                                <template x-if="isPdfNote(selectedNote) && selectedNote.fileUrl">
+                                    <div class="mt-4 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg">
+                                        <iframe :src="selectedNote.fileUrl" class="w-full h-[600px] bg-slate-100 dark:bg-slate-900" frameborder="0"></iframe>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                         <div class="px-6 sm:px-16 pb-16 max-w-4xl mx-auto mt-8">
@@ -1745,23 +1859,57 @@ body {
                         </div>
                     </div>
                     <div>
-                        <label class="text-[10px] font-black uppercase text-slate-400 mb-2 block ml-1">Hình ảnh (Auto Upload)</label>
-                        <label class="w-full h-[180px] border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all overflow-hidden relative group">
-                            <template x-if="!uploadPreview && !newNote.image">
+                        <div class="flex items-center justify-between mb-2 ml-1">
+                            <label class="text-[10px] font-black uppercase text-slate-400">Tệp đính kèm / Tài liệu / Hình ảnh</label>
+                            <template x-if="selectedFile || newNote.fileUrl || newNote.image || newNote.fileName">
+                                <button type="button" @click.stop="removeAttachment()" class="text-[10px] font-bold text-red-500 hover:text-red-700 flex items-center gap-1">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i> Xóa tệp
+                                </button>
+                            </template>
+                        </div>
+                        <label class="w-full h-[180px] border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all overflow-hidden relative group p-3">
+                            <!-- Case 1: Chưa chọn file -->
+                            <template x-if="!selectedFile && !newNote.fileUrl && !newNote.image && !newNote.fileName">
                                 <div class="text-center p-4 group-hover:scale-105 transition-transform">
-                                    <i data-lucide="cloud-upload" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase block">Chọn ảnh từ máy</span>
+                                    <div class="w-12 h-12 mx-auto mb-2 rounded-2xl bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 flex items-center justify-center">
+                                        <i data-lucide="cloud-upload" class="w-6 h-6"></i>
+                                    </div>
+                                    <span class="text-xs font-black text-slate-700 dark:text-slate-200 block mb-1">Tải lên tệp hoặc hình ảnh</span>
+                                    <span class="text-[10px] font-medium text-slate-400 block">PDF, DOC, XLS, PPT, MP3, MP4, ZIP, Ảnh...</span>
                                 </div>
                             </template>
-                            <template x-if="uploadPreview || newNote.image">
-                                <div class="w-full h-full relative">
-                                    <img :src="uploadPreview || newNote.image" class="w-full h-full object-cover">
-                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span class="text-white text-xs font-bold uppercase border border-white px-3 py-1 rounded-full">Thay đổi</span>
+                            
+                            <!-- Case 2: Ảnh xem trước -->
+                            <template x-if="isImageAttachment">
+                                <div class="w-full h-full relative flex items-center justify-center">
+                                    <img :src="uploadPreview || newNote.image || newNote.fileUrl" class="w-full h-full object-cover rounded-xl">
+                                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                                        <span class="text-white text-xs font-bold uppercase border border-white px-3 py-1 rounded-full">Thay đổi ảnh</span>
+                                    </div>
+                                    <div class="absolute bottom-1 left-2 right-2 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-lg text-[9px] font-bold truncate flex items-center justify-between" x-show="newNote.fileName">
+                                        <span class="truncate" x-text="newNote.fileName"></span>
+                                        <span x-text="formatFileSize(newNote.fileSize)"></span>
                                     </div>
                                 </div>
                             </template>
-                            <input type="file" @change="handleFileSelect" class="hidden" accept="image/*">
+
+                            <!-- Case 3: Tài liệu khác (PDF, DOCX, Audio, Video, ZIP, v.v.) -->
+                            <template x-if="!isImageAttachment && (selectedFile || newNote.fileUrl || newNote.fileName)">
+                                <div class="w-full h-full flex flex-col items-center justify-center p-3 bg-slate-50/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-xs mb-2 shadow-sm"
+                                         :class="getFileBadge(newNote.fileType, newNote.fileName).bg">
+                                        <span x-text="getFileExtension(newNote.fileName) || 'FILE'"></span>
+                                    </div>
+                                    <p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-full text-center px-2" x-text="newNote.fileName || 'Tệp đã đính kèm'"></p>
+                                    <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400 font-bold">
+                                        <span x-text="formatFileSize(newNote.fileSize)"></span>
+                                        <span class="text-primary-600 dark:text-primary-400 uppercase" x-text="detectFileCategory(newNote.fileType, newNote.fileName)"></span>
+                                    </div>
+                                    <span class="mt-2 text-[10px] font-bold text-primary-600 underline">Bấm để thay đổi tệp</span>
+                                </div>
+                            </template>
+                            
+                            <input type="file" id="noteFileInput" @change="handleFileSelect($event)" class="hidden" accept="*/*">
                         </label>
                     </div>
                 </div>
@@ -1951,7 +2099,19 @@ body {
 
                 categories: [],
                 notes: [],
-                newNote: { title: '', category: '', subCategory: '', content: '', image: null, tagsInput: '', isPublic: true },
+                newNote: { 
+                    title: '', 
+                    category: '', 
+                    subCategory: '', 
+                    content: '', 
+                    image: null, 
+                    fileUrl: null, 
+                    fileName: null, 
+                    fileType: null, 
+                    fileSize: null, 
+                    tagsInput: '', 
+                    isPublic: true 
+                },
 
                 init() {
                     const cachedPass = localStorage.getItem(KEY_AUTH);
@@ -2105,14 +2265,207 @@ body {
                     }
                 },
 
-                // --- CLOUD UPLOAD ---
+                // --- FILE ATTACHMENT & CLOUD UPLOAD HELPERS ---
+                detectFileCategory(type = '', name = '') {
+                    const ext = (name ? name.split('.').pop() : '').toLowerCase();
+                    const mime = (type || '').toLowerCase();
+
+                    if (mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'heic', 'avif'].includes(ext)) {
+                        return 'image';
+                    }
+                    if (mime === 'application/pdf' || ext === 'pdf') {
+                        return 'pdf';
+                    }
+                    if (['doc', 'docx', 'rtf', 'odt', 'txt', 'pages'].includes(ext) || mime.includes('word') || mime.includes('document')) {
+                        return 'doc';
+                    }
+                    if (['xls', 'xlsx', 'csv', 'ods', 'numbers'].includes(ext) || mime.includes('sheet') || mime.includes('excel') || mime.includes('csv')) {
+                        return 'sheet';
+                    }
+                    if (['ppt', 'pptx', 'odp', 'key'].includes(ext) || mime.includes('presentation') || mime.includes('powerpoint')) {
+                        return 'slide';
+                    }
+                    if (mime.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'wma'].includes(ext)) {
+                        return 'audio';
+                    }
+                    if (mime.startsWith('video/') || ['mp4', 'webm', 'mkv', 'mov', 'avi', 'flv', 'wmv'].includes(ext)) {
+                        return 'video';
+                    }
+                    if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz'].includes(ext) || mime.includes('zip') || mime.includes('compressed')) {
+                        return 'archive';
+                    }
+                    if (['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'py', 'java', 'c', 'cpp', 'cs', 'php', 'sql', 'sh', 'xml', 'yaml', 'yml'].includes(ext)) {
+                        return 'code';
+                    }
+                    return 'file';
+                },
+
+                formatFileSize(bytes) {
+                    if (!bytes || isNaN(bytes) || bytes <= 0) return '';
+                    if (bytes < 1024) return bytes + ' B';
+                    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+                },
+
+                getFileExtension(name) {
+                    if (!name) return '';
+                    const parts = name.split('.');
+                    return parts.length > 1 ? parts.pop().toUpperCase() : '';
+                },
+
+                getFileBadge(type, name) {
+                    const cat = this.detectFileCategory(type, name);
+                    const ext = (name ? name.split('.').pop() : '').toUpperCase() || cat.toUpperCase();
+                    const styles = {
+                        pdf: { bg: 'bg-red-500 text-white', icon: 'file-text', label: 'PDF' },
+                        doc: { bg: 'bg-blue-600 text-white', icon: 'file-text', label: ext || 'DOC' },
+                        sheet: { bg: 'bg-emerald-600 text-white', icon: 'table', label: ext || 'XLS' },
+                        slide: { bg: 'bg-amber-600 text-white', icon: 'presentation', label: ext || 'PPT' },
+                        audio: { bg: 'bg-purple-600 text-white', icon: 'music', label: ext || 'AUDIO' },
+                        video: { bg: 'bg-pink-600 text-white', icon: 'video', label: ext || 'VIDEO' },
+                        archive: { bg: 'bg-amber-700 text-white', icon: 'archive', label: ext || 'ZIP' },
+                        code: { bg: 'bg-cyan-700 text-white', icon: 'code', label: ext || 'CODE' },
+                        image: { bg: 'bg-sky-500 text-white', icon: 'image', label: ext || 'IMG' },
+                        file: { bg: 'bg-slate-600 text-white', icon: 'paperclip', label: ext || 'FILE' }
+                    };
+                    return styles[cat] || styles.file;
+                },
+
+                get isImageAttachment() {
+                    if (this.uploadPreview) return true;
+                    if (this.selectedFile) {
+                        return this.detectFileCategory(this.selectedFile.type, this.selectedFile.name) === 'image';
+                    }
+                    if (this.newNote.image) return true;
+                    if (this.newNote.fileUrl) {
+                        return this.detectFileCategory(this.newNote.fileType, this.newNote.fileName) === 'image';
+                    }
+                    return false;
+                },
+
+                isImageNote(note) {
+                    if (!note) return false;
+                    if (note.image && !note.fileType) return true;
+                    return this.detectFileCategory(note.fileType, note.fileName) === 'image';
+                },
+
+                isAudioNote(note) {
+                    if (!note) return false;
+                    return this.detectFileCategory(note.fileType, note.fileName) === 'audio';
+                },
+
+                isVideoNote(note) {
+                    if (!note) return false;
+                    return this.detectFileCategory(note.fileType, note.fileName) === 'video';
+                },
+
+                isPdfNote(note) {
+                    if (!note) return false;
+                    return this.detectFileCategory(note.fileType, note.fileName) === 'pdf';
+                },
+
+                downloadFile(url, fileName) {
+                    if (!url) return;
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName || 'download';
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => a.remove(), 200);
+                },
+
                 handleFileSelect(e) {
                     const file = e.target.files[0];
-                    if (file) {
-                        this.selectedFile = file;
+                    if (!file) return;
+
+                    this.selectedFile = file;
+                    this.newNote.fileName = file.name;
+                    this.newNote.fileSize = file.size;
+                    this.newNote.fileType = file.type;
+
+                    const cat = this.detectFileCategory(file.type, file.name);
+                    if (cat === 'image') {
                         const reader = new FileReader();
-                        reader.onload = (e) => this.uploadPreview = e.target.result;
+                        reader.onload = (ev) => {
+                            this.uploadPreview = ev.target.result;
+                            this.newNote.image = ev.target.result;
+                        };
                         reader.readAsDataURL(file);
+                    } else {
+                        this.uploadPreview = null;
+                        this.newNote.image = null;
+                    }
+                    this.refreshIcons();
+                },
+
+                removeAttachment() {
+                    this.selectedFile = null;
+                    this.uploadPreview = null;
+                    this.newNote.image = null;
+                    this.newNote.fileUrl = null;
+                    this.newNote.fileName = null;
+                    this.newNote.fileType = null;
+                    this.newNote.fileSize = null;
+                    const fileInput = document.getElementById('noteFileInput');
+                    if (fileInput) fileInput.value = '';
+                    this.refreshIcons();
+                },
+
+                async uploadFileToCloud(file) {
+                    if (!this.isUnlocked) {
+                        this.showToast("Vui lòng mở khóa để upload file!", "error");
+                        throw new Error("Unauthorized");
+                    }
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    try {
+                        const response = await fetch(`${SERVER_URL}/upload-file`, {
+                            method: 'POST',
+                            headers: { 'Authorization': this.userPassword },
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        if (data.success && data.url) {
+                            return {
+                                url: data.url,
+                                fileName: data.fileName || file.name,
+                                fileType: data.fileType || file.type,
+                                fileSize: data.fileSize || file.size
+                            };
+                        } else {
+                            throw new Error(data.error || 'Upload failed');
+                        }
+                    } catch (error) {
+                        console.warn('Lỗi upload lên Worker /upload-file, thử fallback:', error);
+                        
+                        // If image, try legacy ImgBB
+                        if (file.type && file.type.startsWith('image/')) {
+                            try {
+                                const imgUrl = await this.uploadImageToCloud(file);
+                                return {
+                                    url: imgUrl,
+                                    fileName: file.name,
+                                    fileType: file.type,
+                                    fileSize: file.size
+                                };
+                            } catch (imgErr) {
+                                console.warn('ImgBB fallback failed:', imgErr);
+                            }
+                        }
+                        
+                        // Fallback to local Base64
+                        const base64Url = await this.compressImage(file);
+                        return {
+                            url: base64Url,
+                            fileName: file.name,
+                            fileType: file.type,
+                            fileSize: file.size
+                        };
                     }
                 },
 
@@ -2234,13 +2587,41 @@ body {
                     this.isLoading = true;
                     this.loadingText = 'Đang xử lý...';
 
-                    let imageUrl = this.newNote.image;
+                    let finalFileUrl = this.newNote.fileUrl || this.newNote.image || null;
+                    let finalFileName = this.newNote.fileName || null;
+                    let finalFileType = this.newNote.fileType || null;
+                    let finalFileSize = this.newNote.fileSize || null;
+                    let finalImageUrl = this.newNote.image || null;
+
                     if (this.selectedFile) {
-                        this.loadingText = 'Đang Upload ảnh...';
+                        this.loadingText = 'Đang tải tệp lên...';
                         try {
-                            imageUrl = await this.uploadImageToCloud(this.selectedFile);
+                            const uploadRes = await this.uploadFileToCloud(this.selectedFile);
+                            if (uploadRes && uploadRes.url) {
+                                finalFileUrl = uploadRes.url;
+                                finalFileName = uploadRes.fileName || this.selectedFile.name;
+                                finalFileType = uploadRes.fileType || this.selectedFile.type;
+                                finalFileSize = uploadRes.fileSize || this.selectedFile.size;
+
+                                const cat = this.detectFileCategory(finalFileType, finalFileName);
+                                if (cat === 'image') {
+                                    finalImageUrl = uploadRes.url;
+                                } else {
+                                    finalImageUrl = null;
+                                }
+                            }
                         } catch (e) {
-                            console.log("Upload failed, using local base64");
+                            console.warn("Upload lên cloud thất bại, chuyển sang lưu Base64:", e);
+                            const base64Data = await this.compressImage(this.selectedFile);
+                            finalFileUrl = base64Data;
+                            finalFileName = this.selectedFile.name;
+                            finalFileType = this.selectedFile.type;
+                            finalFileSize = this.selectedFile.size;
+                            if (this.detectFileCategory(finalFileType, finalFileName) === 'image') {
+                                finalImageUrl = base64Data;
+                            } else {
+                                finalImageUrl = null;
+                            }
                         }
                     }
 
@@ -2250,10 +2631,14 @@ body {
                         category: this.newNote.category,
                         subCategory: this.newNote.subCategory,
                         content: this.newNote.content,
-                        image: imageUrl, 
+                        image: finalImageUrl, 
+                        fileUrl: finalFileUrl,
+                        fileName: finalFileName,
+                        fileType: finalFileType,
+                        fileSize: finalFileSize,
                         isPublic: this.newNote.isPublic,
-                        tags: this.newNote.tagsInput.split(',').map(t => t.trim()).filter(t => t),
-                        createdAt: this.isEditing ? this.notes.find(n => n.id === this.currentEditId).createdAt : new Date().toISOString(),
+                        tags: (this.newNote.tagsInput || '').split(',').map(t => t.trim()).filter(t => t),
+                        createdAt: this.isEditing ? (this.notes.find(n => n.id === this.currentEditId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
                         updatedAt: new Date().toISOString(),
                         deletedAt: null 
                     };
@@ -2553,6 +2938,8 @@ body {
                     this.inlineNewCatName = '';
                     this.inlineNewSubName = '';
                     this.resetNewNote();
+                    const fileInput = document.getElementById('noteFileInput');
+                    if (fileInput) fileInput.value = '';
                     this.showAddModal = true;
                     this.refreshIcons();
                 },
@@ -2571,9 +2958,15 @@ body {
                         subCategory: note.subCategory,
                         content: note.content,
                         image: note.image,
+                        fileUrl: note.fileUrl || note.image || null,
+                        fileName: note.fileName || (note.image ? 'image.jpg' : null),
+                        fileType: note.fileType || (note.image ? 'image/jpeg' : null),
+                        fileSize: note.fileSize || null,
                         isPublic: note.isPublic,
                         tagsInput: (note.tags || []).join(', ')
                     };
+                    const fileInput = document.getElementById('noteFileInput');
+                    if (fileInput) fileInput.value = '';
                     this.showAddModal = true;
                     this.refreshIcons();
                 },
@@ -2583,8 +2976,17 @@ body {
                         title: '', 
                         category: firstCat ? firstCat.name : '', 
                         subCategory: (firstCat && firstCat.subs.length > 0) ? firstCat.subs[0] : '',
-                        content: '', image: null, tagsInput: '', isPublic: true 
+                        content: '', 
+                        image: null, 
+                        fileUrl: null, 
+                        fileName: null, 
+                        fileType: null, 
+                        fileSize: null, 
+                        tagsInput: '', 
+                        isPublic: true 
                     };
+                    this.selectedFile = null;
+                    this.uploadPreview = null;
                 },
                 countNotes(cat, sub) { return this.notes.filter(n => n.category === cat && n.subCategory === sub && !n.deletedAt).length; },
                 countNotesInParent(cat) { return this.notes.filter(n => n.category === cat && !n.deletedAt).length; },
