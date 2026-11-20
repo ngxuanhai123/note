@@ -1050,40 +1050,7 @@ body {
 <body class="bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-500 min-h-screen font-sans flex flex-col"> 
 <div class="phiquiz-app-top-bar" style="background-color:#22c55e;"></div> 
 
-<!-- ==========================================================================
-     PHIQUIZ SPLASH SCREEN
-     ========================================================================== -->
-<div id="phiquizSplashScreen" class="phiquiz-splash" data-swarm-ignore>
-  <div class="phiquiz-splash-card">
-    <div class="pressable" style="width:60px;height:60px;background:var(--color-green);border:2.5px solid var(--color-ink);border-radius:20px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-hard);animation:wiggle 2.8s infinite ease-in-out;">
-      <span class="msr msr-filled" style="font-size:34px;color:#1e1e1e;">bookmark</span>
-    </div>
-    <div class="phiquiz-splash-title">HiHi Notes</div>
-    <div class="phiquiz-splash-sub">Không gian lưu trữ ghi chú cá nhân và kiến thức</div>
-    <div class="phiquiz-splash-progress">
-      <div class="phiquiz-splash-fill"></div>
-    </div>
-  </div>
-</div>
-<script>
-(function() {
-  function hideSplash() {
-    var sp = document.getElementById('phiquizSplashScreen');
-    if (sp) {
-      sp.style.opacity = '0';
-      sp.style.pointerEvents = 'none';
-      setTimeout(function() { sp.remove(); }, 350);
-    }
-  }
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(hideSplash, 250);
-  } else {
-    window.addEventListener('DOMContentLoaded', function() { setTimeout(hideSplash, 250); });
-    window.addEventListener('load', function() { setTimeout(hideSplash, 150); });
-  }
-  setTimeout(hideSplash, 7000);
-})();
-</script>
+
 
 <!-- ==========================================================================
      DESKTOP SIDEBAR (≥1024px)
