@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" x-data="appData()" :class="{ 'dark': darkMode }" :style="'--theme-color: ' + currentThemeColor" data-theme="light">
+<html lang="vi" x-data="appData()" :class="{ 'dark': darkMode }" :style="'--theme-color: ' + currentThemeColor" :data-theme="darkMode ? 'dark' : 'light'" data-theme="light">
 <head>
     <!-- Real-time Error Monitoring & Sentry -->
     <script src="hihi-monitor.js"></script>
@@ -1072,17 +1072,6 @@ body {
     <a href="https://ngxuanhai123.github.io/note/" class="phiquiz-sidebar-btn active" style="background-color:#22c55e !important;color:#1e1e1e !important;" title="Kho Lưu Ghi Chú">
       <span class="msr msr-filled">bookmark</span>
     </a>
-    <button type="button" class="phiquiz-sidebar-btn" onclick="window.hihiOpenLeaderboard()" title="Bảng Xếp Hạng">
-      <span class="msr">emoji_events</span>
-    </button>
-  </div>
-  <div class="phiquiz-sidebar-footer">
-    <button type="button" class="phiquiz-sidebar-btn" onclick="toggleHiHiSysTheme()" title="Đổi Chế Độ Sáng / Tối">
-      <span class="msr" id="hihiSidebarThemeIcon">dark_mode</span>
-    </button>
-    <button type="button" class="phiquiz-sidebar-btn login-btn" onclick="hihiAuthLogin()" title="Đăng Nhập">
-      <span class="msr msr-filled">account_circle</span>
-    </button>
   </div>
 </aside>
 
@@ -1231,6 +1220,20 @@ body {
             <div class="hihi-grid-desc">Dịch câu & ngữ cảnh</div>
           </div>
       </a>
+      <a href="https://ngxuanhai123.github.io/dich-ios/" class="hihi-grid-card">
+          <div class="hihi-grid-icon hihi-icon-dich"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+          <div class="hihi-grid-info">
+            <div class="hihi-grid-name">Dịch Touch</div>
+            <div class="hihi-grid-desc">Dịch nhanh tối ưu Mobile</div>
+          </div>
+      </a>
+      <a href="https://ngxuanhai123.github.io/indo/" class="hihi-grid-card">
+          <div class="hihi-grid-icon hihi-icon-tuvung"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+          <div class="hihi-grid-info">
+            <div class="hihi-grid-name">Tiếng Indo</div>
+            <div class="hihi-grid-desc">Học giao tiếp Bahasa</div>
+          </div>
+      </a>
       <a href="https://ngxuanhai123.github.io/note/" class="hihi-grid-card current">
           <div class="hihi-grid-icon hihi-icon-note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
           <div class="hihi-grid-info">
@@ -1315,22 +1318,18 @@ body {
             </div>
 
             <div class="flex items-center gap-3 flex-shrink-0">
-                <div class="flex items-center mr-2 border-r border-slate-200 dark:border-slate-800 pr-4 gap-1">
-                    <button @click="exportData()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 transition-colors" title="Sao lưu (Export JSON)">
-                        <i data-lucide="download" class="w-5 h-5"></i>
+                <div class="flex items-center mr-1 pr-3 gap-1.5" style="border-right:2px solid var(--color-surface3);">
+                    <button @click="exportData()" class="p-2 rounded-xl transition-colors" style="background:var(--color-surface);color:var(--color-ink);border:2px solid var(--color-ink);" title="Sao lưu (Export JSON)">
+                        <i data-lucide="download" class="w-4 h-4"></i>
                     </button>
-                    <label class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 cursor-pointer transition-colors" title="Khôi phục (Import JSON)">
-                        <i data-lucide="upload" class="w-5 h-5"></i>
+                    <label class="p-2 rounded-xl cursor-pointer transition-colors" style="background:var(--color-surface);color:var(--color-ink);border:2px solid var(--color-ink);" title="Khôi phục (Import JSON)">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
                         <input type="file" class="hidden" accept=".json" @change="importData($event)">
                     </label>
                 </div>
 
-                <button @click="handleLockAction()" :class="isUnlocked ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/20' : 'text-slate-400 bg-slate-100 dark:bg-slate-800'" class="p-2.5 rounded-xl transition-all" :title="isUnlocked ? 'Bấm để khóa (Đăng xuất)' : 'Bấm để mở khóa'">
-                    <i :data-lucide="isUnlocked ? 'unlock' : 'lock'" class="w-5 h-5"></i>
-                </button>
-                <button @click="toggleNoteTheme()" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all" title="Chuyển chế độ Sáng / Tối">
-                    <i x-show="!darkMode" data-lucide="moon" class="w-5 h-5"></i>
-                    <i x-show="darkMode" data-lucide="sun" class="w-5 h-5"></i>
+                <button @click="handleLockAction()" :style="isUnlocked ? 'background:var(--color-green);color:#1e1e1e;border:2px solid var(--color-ink);' : 'background:var(--color-surface2);color:var(--color-ink);border:2px solid var(--color-ink);'" class="p-2.5 rounded-xl transition-all" :title="isUnlocked ? 'Bấm để khóa (Đăng xuất)' : 'Bấm để mở khóa'">
+                    <i :data-lucide="isUnlocked ? 'unlock' : 'lock'" class="w-4 h-4"></i>
                 </button>
                 <template x-if="isUnlocked">
                     <button @click="openAddModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-primary-500/20 active:scale-95 ml-2">
@@ -1482,7 +1481,7 @@ body {
                                     <i data-lucide="lock" class="w-6 h-6 text-slate-400"></i>
                                 </div>
                                 <p class="text-xs font-bold text-slate-500 uppercase">Nội dung riêng tư</p>
-                                <button @click="handleLockAction()" class="mt-4 text-[10px] font-black text-primary-600 underline hover:text-primary-700">NHẬP MẬT KHẨU</button>
+                                <button @click="handleLockAction()" class="mt-4 px-3 py-1.5 rounded-xl text-[11px] font-extrabold border-2 border-ink bg-yellow text-ink">NHẬP MẬT KHẨU</button>
                             </div>
                         </template>
 
@@ -2114,6 +2113,9 @@ body {
                 },
 
                 init() {
+                    window.addEventListener('hihi-theme-changed', (e) => {
+                        this.darkMode = !!(e && e.detail && e.detail.darkMode);
+                    });
                     const cachedPass = localStorage.getItem(KEY_AUTH);
                     if (cachedPass) {
                         this.userPassword = cachedPass;
@@ -3006,6 +3008,35 @@ body {
     </p>
 </footer>
 
+<!-- HIHI SHARED USER DROPDOWN -->
+<div id="hihiUserDropdown" class="hihi-user-dropdown" onclick="event.stopPropagation()">
+  <div class="hihi-dropdown-header">
+    <img id="hihiDropAvatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E" class="hihi-user-avatar" alt="Avatar">
+    <div style="min-width:0;">
+      <div id="hihiDropName" style="font-weight:800;font-size:0.88rem;color:var(--color-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Khách</div>
+      <div id="hihiDropEmail" style="font-size:0.72rem;color:var(--color-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Chưa đăng nhập</div>
+    </div>
+  </div>
+  <div class="hihi-dropdown-scores">
+    <div class="hihi-score-item">
+      <div id="hihiScoreTotal" class="score-val">0</div>
+      <div class="score-lbl">🏆 Tổng điểm</div>
+    </div>
+    <div class="hihi-score-item">
+      <div id="hihiScoreVocab" class="score-val">0</div>
+      <div class="score-lbl">📚 Từ Vựng</div>
+    </div>
+    <div class="hihi-score-item">
+      <div id="hihiScoreSpell" class="score-val">0</div>
+      <div class="score-lbl">✍️ Chính Tả</div>
+    </div>
+  </div>
+  <div class="hihi-dropdown-actions">
+    <button type="button" class="hihi-dropdown-btn" onclick="hihiOpenLeaderboard()"><span>🏆</span> Bảng Xếp Hạng Chung</button>
+    <button type="button" class="hihi-dropdown-btn logout-btn" onclick="hihiAuthLogout()"><span>🚪</span> Đăng xuất</button>
+  </div>
+</div>
+
 <script id="hihi-global-nav-script">
 function applyHiHiTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
@@ -3028,6 +3059,7 @@ function toggleHiHiSysTheme() {
   var next = isDark ? 'light' : 'dark';
   localStorage.setItem('hihi-theme', next);
   applyHiHiTheme(next);
+  window.dispatchEvent(new CustomEvent('hihi-theme-changed', { detail: { theme: next, darkMode: next === 'dark' } }));
 }
 
 function toggleHiHiSysMenu(e) {
@@ -3058,12 +3090,105 @@ document.addEventListener('keydown', function(e) {
 });
 
 (function() {
-  var saved = localStorage.getItem('hihi-theme');
-  if (!saved) {
-    saved = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-  }
+  var saved = localStorage.getItem('hihi-theme') || 'light';
+  localStorage.setItem('hihi-theme', saved);
   applyHiHiTheme(saved);
+  window.dispatchEvent(new CustomEvent('hihi-theme-changed', { detail: { theme: saved, darkMode: saved === 'dark' } }));
 })();
+</script>
+<script type="module">
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const hihiFirebaseConfig = {
+  apiKey: "AIzaSyDtaVYb_72YvoGzvcERJZypUGS-u3skz2M",
+  authDomain: "tuvung-88e8d.firebaseapp.com",
+  databaseURL: "https://tuvung-88e8d-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "tuvung-88e8d",
+  storageBucket: "tuvung-88e8d.firebasestorage.app",
+  messagingSenderId: "722559465686",
+  appId: "1:722559465686:web:bae1a77791205d372db177",
+  measurementId: "G-T785TQ3V32"
+};
+const HIHI_ADMIN_EMAIL = "haingxua@gmail.com";
+const hihiApp = getApps().length === 0 ? initializeApp(hihiFirebaseConfig) : getApp();
+const auth = getAuth(hihiApp);
+const db = getFirestore(hihiApp);
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: 'select_account' });
+
+window.hihiAuth = {
+  app: hihiApp, auth, db, provider,
+  async login() {
+    try { await signInWithPopup(auth, provider); }
+    catch(err) {
+      if (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user" || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
+        try { await signInWithRedirect(auth, provider); } catch(re) { alert("Không thể đăng nhập Google: " + re.message); }
+      } else { alert("Đăng nhập Google thất bại: " + err.message); }
+    }
+  },
+  async logout() {
+    try { await signOut(auth); window.location.reload(); } catch(e) { console.error("Logout failed:", e); }
+  }
+};
+window.hihiAuthLogin = () => window.hihiAuth.login();
+window.hihiAuthLogout = () => window.hihiAuth.logout();
+window.toggleHiHiUserMenu = function(e) {
+  if (e) e.stopPropagation();
+  const d = document.getElementById("hihiUserDropdown");
+  if (d) d.classList.toggle("active");
+};
+document.addEventListener("click", function() {
+  const d = document.getElementById("hihiUserDropdown");
+  if (d) d.classList.remove("active");
+});
+getRedirectResult(auth).catch(() => {});
+
+onAuthStateChanged(auth, async (user) => {
+  const authBtn = document.getElementById("hihiSysAuthBtn");
+  const userPill = document.getElementById("hihiUserPill");
+  const avatar = document.getElementById("hihiUserAvatar");
+  const name = document.getElementById("hihiUserName");
+  const dropAvatar = document.getElementById("hihiDropAvatar");
+  const dropName = document.getElementById("hihiDropName");
+  const dropEmail = document.getElementById("hihiDropEmail");
+  const adminBadge = document.getElementById("hihiAdminBadge");
+
+  if (user) {
+    const isAdmin = (user.email === HIHI_ADMIN_EMAIL);
+    window.hihiCurrentUser = user;
+    if (authBtn) authBtn.style.display = "none";
+    if (userPill) userPill.style.display = "inline-flex";
+    if (avatar && user.photoURL) avatar.src = user.photoURL;
+    if (name) name.textContent = user.displayName || user.email.split("@")[0];
+    if (dropAvatar && user.photoURL) dropAvatar.src = user.photoURL;
+    if (dropName) dropName.textContent = user.displayName || "Học viên";
+    if (dropEmail) dropEmail.textContent = user.email || "";
+    if (adminBadge) adminBadge.style.display = isAdmin ? "inline-block" : "none";
+    try {
+      const snap = await getDoc(doc(db, "hihi_leaderboard", user.uid));
+      if (snap.exists()) {
+        const d = snap.data();
+        window.hihiCurrentUserData = d;
+        const tot = document.getElementById("hihiScoreTotal");
+        const voc = document.getElementById("hihiScoreVocab");
+        const spl = document.getElementById("hihiScoreSpell");
+        if (tot) tot.textContent = d.total_score || 0;
+        if (voc) voc.textContent = d.tuvung_score || 0;
+        if (spl) spl.textContent = d.chinhta_score || 0;
+      }
+    } catch (e) {}
+  } else {
+    window.hihiCurrentUser = null;
+    window.hihiCurrentUserData = null;
+    if (authBtn) authBtn.style.display = "inline-flex";
+    if (userPill) userPill.style.display = "none";
+    if (adminBadge) adminBadge.style.display = "none";
+    if (dropName) dropName.textContent = "Khách";
+    if (dropEmail) dropEmail.textContent = "Chưa đăng nhập";
+  }
+});
 </script>
 <script>
 if ('serviceWorker' in navigator) {
