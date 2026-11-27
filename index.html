@@ -13,6 +13,7 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -1473,9 +1474,9 @@ body {
                         </template>
 
                         <!-- Card Banner: Image -->
-                        <template x-if="isImageNote(note) && (note.image || note.fileUrl)">
+                        <template x-if="isImageNote(note) && sanitizeSafeUrl(note.image || note.fileUrl, 'media')">
                             <div class="h-44 w-full overflow-hidden relative">
-                                <img :src="note.image || note.fileUrl" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                                <img :src="sanitizeSafeUrl(note.image || note.fileUrl, 'media')" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                             </div>
                         </template>
@@ -1622,9 +1623,9 @@ body {
                 <template x-if="selectedNote">
                     <div>
                         <!-- Reader: Image Attachment -->
-                        <template x-if="isImageNote(selectedNote) && (selectedNote.image || selectedNote.fileUrl)">
+                        <template x-if="isImageNote(selectedNote) && sanitizeSafeUrl(selectedNote.image || selectedNote.fileUrl, 'media')">
                             <div class="w-full relative bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
-                                <img :src="selectedNote.image || selectedNote.fileUrl" class="w-full max-h-[600px] object-contain mx-auto">
+                                <img :src="sanitizeSafeUrl(selectedNote.image || selectedNote.fileUrl, 'media')" class="w-full max-h-[600px] object-contain mx-auto">
                                 <div class="p-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-t border-slate-100 dark:border-slate-800 flex items-center justify-between px-6">
                                     <div class="text-xs font-bold text-slate-600 dark:text-slate-300 truncate max-w-md" x-text="selectedNote.fileName || 'Hình ảnh đính kèm'"></div>
                                     <div class="flex items-center gap-2">
@@ -1632,7 +1633,7 @@ body {
                                                 class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all">
                                             <i data-lucide="download" class="w-3.5 h-3.5"></i> Tải ảnh
                                         </button>
-                                        <a :href="selectedNote.image || selectedNote.fileUrl" target="_blank" rel="noopener noreferrer"
+                                        <a :href="sanitizeSafeUrl(selectedNote.image || selectedNote.fileUrl, 'media') || '#'" target="_blank" rel="noopener noreferrer"
                                            class="flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 hover:bg-primary-100 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 rounded-xl text-xs font-bold transition-all">
                                             <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Xem ảnh gốc
                                         </a>
@@ -1642,7 +1643,7 @@ body {
                         </template>
 
                         <!-- Reader: Audio Attachment -->
-                        <template x-if="isAudioNote(selectedNote) && (selectedNote.fileUrl || selectedNote.image)">
+                        <template x-if="isAudioNote(selectedNote) && sanitizeSafeUrl(selectedNote.fileUrl || selectedNote.image, 'media')">
                             <div class="max-w-4xl mx-auto px-6 sm:px-16 mt-6">
                                 <div class="p-5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-primary-500/10 to-transparent border border-purple-200 dark:border-purple-900/50 flex flex-col gap-3">
                                     <div class="flex items-center justify-between">
@@ -1660,16 +1661,16 @@ body {
                                             <i data-lucide="download" class="w-3.5 h-3.5"></i> Tải về
                                         </button>
                                     </div>
-                                    <audio controls class="w-full mt-2" :src="selectedNote.fileUrl || selectedNote.image"></audio>
+                                    <audio controls class="w-full mt-2" :src="sanitizeSafeUrl(selectedNote.fileUrl || selectedNote.image, 'media')"></audio>
                                 </div>
                             </div>
                         </template>
 
                         <!-- Reader: Video Attachment -->
-                        <template x-if="isVideoNote(selectedNote) && (selectedNote.fileUrl || selectedNote.image)">
+                        <template x-if="isVideoNote(selectedNote) && sanitizeSafeUrl(selectedNote.fileUrl || selectedNote.image, 'media')">
                             <div class="max-w-4xl mx-auto px-6 sm:px-16 mt-6">
                                 <div class="rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-xl">
-                                    <video controls class="w-full max-h-[500px]" :src="selectedNote.fileUrl || selectedNote.image"></video>
+                                    <video controls class="w-full max-h-[500px]" :src="sanitizeSafeUrl(selectedNote.fileUrl || selectedNote.image, 'media')"></video>
                                     <div class="p-3 bg-slate-900 text-white flex items-center justify-between">
                                         <span class="text-xs font-bold truncate" x-text="selectedNote.fileName || 'Tệp video'"></span>
                                         <button @click="downloadFile(selectedNote.fileUrl || selectedNote.image, selectedNote.fileName)"
@@ -1704,7 +1705,7 @@ body {
                                                 class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-black shadow-sm transition-all">
                                             <i data-lucide="download" class="w-4 h-4"></i> Tải về máy
                                         </button>
-                                        <a :href="selectedNote.fileUrl" target="_blank" rel="noopener noreferrer"
+                                        <a :href="sanitizeSafeUrl(selectedNote.fileUrl) || '#'" target="_blank" rel="noopener noreferrer"
                                            class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-black transition-all">
                                             <i data-lucide="external-link" class="w-4 h-4"></i> Mở tab mới
                                         </a>
@@ -1712,9 +1713,9 @@ body {
                                 </div>
                                 
                                 <!-- Embedded preview for PDF -->
-                                <template x-if="isPdfNote(selectedNote) && selectedNote.fileUrl">
+                                <template x-if="isPdfNote(selectedNote) && sanitizeSafeUrl(selectedNote.fileUrl)">
                                     <div class="mt-4 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg">
-                                        <iframe :src="selectedNote.fileUrl" class="w-full h-[600px] bg-slate-100 dark:bg-slate-900" frameborder="0"></iframe>
+                                        <iframe :src="sanitizeSafeUrl(selectedNote.fileUrl)" class="w-full h-[600px] bg-slate-100 dark:bg-slate-900" frameborder="0"></iframe>
                                     </div>
                                 </template>
                             </div>
@@ -1742,7 +1743,7 @@ body {
                             </div>
 
                             <article class="prose dark:prose-invert prose-slate prose-lg max-w-none markdown-content text-slate-700 dark:text-slate-300" 
-                                     x-html="marked.parse(selectedNote.content || '')">
+                                     x-html="renderSafeMarkdown(selectedNote.content || '')">
                             </article>
                         </div>
                     </div>
@@ -2001,29 +2002,100 @@ body {
         const KEY_CATS = 'HIHI_CATS_CACHE';
         const KEY_AUTH = 'HIHI_AUTH_TOKEN';
 
-        // === CẤU HÌNH MARKED: Link mở tab mới + auto-linkify URL thuần text ===
+        function escapeHtmlNote(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function sanitizeSafeUrl(url, mode = 'link') {
+            if (!url || typeof url !== 'string') return '';
+            const trimmed = url.trim();
+            if (!trimmed) return '';
+            if (trimmed.startsWith('/') || trimmed.startsWith('#')) return trimmed;
+            if (mode === 'media' && /^data:(?:image\/(?:png|jpe?g|gif|webp|bmp|avif|ico)|audio\/(?:mpeg|mp3|wav|ogg|mp4|aac|flac)|video\/(?:mp4|webm|ogg));base64,[A-Za-z0-9+/=]+$/i.test(trimmed)) {
+                return trimmed;
+            }
+            try {
+                const parsed = new URL(trimmed, window.location.origin);
+                if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+                    return parsed.href;
+                }
+            } catch (_) {}
+            return '';
+        }
+
+        function fallbackSanitizeHtml(html) {
+            const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+            const blockedTags = new Set(['script', 'iframe', 'object', 'embed', 'svg', 'math', 'style', 'link', 'meta', 'base', 'form', 'input', 'button', 'textarea', 'select']);
+            const walk = (node) => {
+                for (const child of Array.from(node.childNodes)) {
+                    if (child.nodeType === 1) {
+                        const tag = child.tagName.toLowerCase();
+                        if (blockedTags.has(tag)) {
+                            child.remove();
+                            continue;
+                        }
+                        for (const attr of Array.from(child.attributes)) {
+                            const name = attr.name.toLowerCase();
+                            if (name.startsWith('on') || name === 'srcdoc' || name === 'formaction') {
+                                child.removeAttribute(attr.name);
+                            } else if (name === 'href' || name === 'src' || name === 'xlink:href') {
+                                const safe = sanitizeSafeUrl(attr.value, name === 'src' ? 'media' : 'link');
+                                if (!safe) child.removeAttribute(attr.name);
+                                else child.setAttribute(attr.name, safe);
+                            }
+                        }
+                        walk(child);
+                    }
+                }
+            };
+            walk(doc.body);
+            return doc.body.innerHTML;
+        }
+
+        function renderSafeMarkdown(rawContent) {
+            const rawHtml = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(String(rawContent || '')) : escapeHtmlNote(rawContent);
+            if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
+                return window.DOMPurify.sanitize(rawHtml, {
+                    ADD_ATTR: ['target', 'rel'],
+                    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'svg', 'form', 'input', 'textarea'],
+                    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'srcdoc']
+                });
+            }
+            return fallbackSanitizeHtml(rawHtml);
+        }
+
+        window.sanitizeSafeUrl = sanitizeSafeUrl;
+        window.renderSafeMarkdown = renderSafeMarkdown;
+
+        // === CẤU HÌNH MARKED: Link mở tab mới + auto-linkify URL thuần text (đã lọc XSS) ===
         (function setupMarked() {
             const renderer = new marked.Renderer();
 
-            // Link trong Markdown [text](url) → mở tab mới, an toàn
             renderer.link = function(href, title, text) {
-                // marked v5+ có thể truyền object
                 if (typeof href === 'object' && href !== null) {
                     title = href.title;
                     text = href.text;
                     href = href.href;
                 }
-                const safeHref = (href || '').replace(/javascript:/gi, '');
-                const titleAttr = title ? ` title="${title}"` : '';
-                return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
+                const safeHref = sanitizeSafeUrl(href || '', 'link') || '#';
+                const titleAttr = title ? ` title="${escapeHtmlNote(title)}"` : '';
+                return `<a href="${escapeHtmlNote(safeHref)}" target="_blank" rel="noopener noreferrer"${titleAttr}>${escapeHtmlNote(text || safeHref)}</a>`;
             };
 
-            // Paragraph: auto-linkify plain text URLs (http/https) không nằm trong markdown link
             renderer.paragraph = function(text) {
                 if (typeof text === 'object' && text !== null && text.text) text = text.text;
-                const linked = text.replace(
+                const linked = String(text || '').replace(
                     /(?<!['"=(])(https?:\/\/[^\s<>"')\]]+)/g,
-                    (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
+                    (url) => {
+                        const safe = sanitizeSafeUrl(url, 'link');
+                        return safe ? `<a href="${escapeHtmlNote(safe)}" target="_blank" rel="noopener noreferrer">${escapeHtmlNote(safe)}</a>` : escapeHtmlNote(url);
+                    }
                 );
                 return `<p>${linked}</p>\n`;
             };
@@ -2033,6 +2105,8 @@ body {
         
         function appData() {
             return {
+                sanitizeSafeUrl,
+                renderSafeMarkdown,
                 darkMode: (localStorage.getItem('hihi-theme') === 'dark') || document.documentElement.classList.contains('dark'),
                 toggleNoteTheme() {
                     if (typeof toggleHiHiSysTheme === 'function') {
@@ -2379,9 +2453,13 @@ body {
                 },
 
                 downloadFile(url, fileName) {
-                    if (!url) return;
+                    const safeUrl = sanitizeSafeUrl(url, 'media');
+                    if (!safeUrl) {
+                        this.showToast('URL tệp đính kèm không hợp lệ', 'error');
+                        return;
+                    }
                     const a = document.createElement('a');
-                    a.href = url;
+                    a.href = safeUrl;
                     a.download = fileName || 'download';
                     a.target = '_blank';
                     a.rel = 'noopener noreferrer';
@@ -2732,13 +2810,15 @@ body {
                         this.showToast("Thùng rác trống");
                         return;
                     }
+                    const nowIso = new Date().toISOString();
                     trashNotes.forEach(n => {
                         n.deletedAt = null;
-                        n.updatedAt = new Date().toISOString();
+                        n.updatedAt = nowIso;
                     });
                     this.saveToLocal();
-                    this.showToast(`Đã khôi phục ${trashNotes.length} ghi chú`);
                     this.refreshIcons();
+                    await Promise.allSettled(trashNotes.map(n => this.fetchAPI('/note', 'POST', n)));
+                    this.showToast(`Đã khôi phục ${trashNotes.length} ghi chú`);
                 },
 
                 // Empty entire trash
@@ -2752,6 +2832,7 @@ body {
                     const trashIds = new Set(trashNotes.map(n => n.id));
                     this.notes = this.notes.filter(n => !trashIds.has(n.id));
                     this.saveToLocal();
+                    await Promise.allSettled(trashNotes.map(n => this.fetchAPI(`/note/${encodeURIComponent(n.id)}`, 'DELETE')));
                     this.showToast("Đã dọn sạch thùng rác");
                 },
 
