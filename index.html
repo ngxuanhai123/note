@@ -1314,8 +1314,9 @@ body {
                     </label>
                 </div>
 
-                <button @click="handleLockAction()" :style="isUnlocked ? 'background:var(--color-green);color:#1e1e1e;border:2px solid var(--color-ink);' : 'background:var(--color-surface2);color:var(--color-ink);border:2px solid var(--color-ink);'" class="p-2.5 rounded-xl transition-all" :title="isUnlocked ? 'Bấm để khóa (Đăng xuất)' : 'Bấm để mở khóa'">
-                    <i :data-lucide="isUnlocked ? 'unlock' : 'lock'" class="w-4 h-4"></i>
+                <button @click="handleLockAction()" :style="isUnlocked ? 'background:var(--color-green);color:#1e1e1e;border:2px solid var(--color-ink);' : 'background:var(--color-surface2);color:var(--color-ink);border:2px solid var(--color-ink);'" class="p-2.5 rounded-xl transition-all" :title="(isAdminLoggedIn && !userPassword) ? 'Đã mở khóa tự động bằng tài khoản Admin' : (isUnlocked ? 'Bấm để khóa (Đăng xuất)' : 'Bấm để mở khóa')">
+                    <span x-show="isUnlocked" class="flex items-center justify-center"><i data-lucide="unlock" class="w-4 h-4"></i></span>
+                    <span x-show="!isUnlocked" class="flex items-center justify-center"><i data-lucide="lock" class="w-4 h-4"></i></span>
                 </button>
                 <template x-if="isUnlocked">
                     <button @click="openAddModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-primary-500/20 active:scale-95 ml-2">
@@ -2044,6 +2045,7 @@ body {
                 isLoading: false,
                 loadingText: 'Đang xử lý...',
                 isUnlocked: false,
+                isAdminLoggedIn: false,
                 userPassword: '', 
                 showAddModal: false,
                 showCatModal: false,
@@ -2103,10 +2105,34 @@ body {
                         this.darkMode = !!(e && e.detail && e.detail.darkMode);
                     });
                     const cachedPass = localStorage.getItem(KEY_AUTH);
+                    const hasAdminSession = !!(window.hihiIsAdmin && window.hihiCurrentUser);
                     if (cachedPass) {
                         this.userPassword = cachedPass;
                         this.isUnlocked = true;
                     }
+                    if (hasAdminSession) {
+                        this.isAdminLoggedIn = true;
+                        this.isUnlocked = true;
+                    }
+                    window.addEventListener('hihi-auth-changed', (e) => {
+                        const detail = (e && e.detail) || {};
+                        this.isAdminLoggedIn = !!detail.isAdmin;
+                        if (detail.isAdmin) {
+                            this.isUnlocked = true;
+                        } else {
+                            const storedPass = localStorage.getItem(KEY_AUTH);
+                            if (storedPass) {
+                                this.userPassword = storedPass;
+                                this.isUnlocked = true;
+                            } else {
+                                this.userPassword = '';
+                                this.isUnlocked = false;
+                                this.showAddModal = false;
+                                this.showCatModal = false;
+                            }
+                        }
+                        this.refreshIcons();
+                    });
                     this.loadLocalData();
                     let canSuaDoi = false; 
 
@@ -2401,24 +2427,37 @@ body {
                     this.refreshIcons();
                 },
 
+                async getAuthHeaderValue() {
+                    if (window.hihiIsAdmin && window.hihiCurrentUser && typeof window.hihiCurrentUser.getIdToken === 'function') {
+                        try {
+                            const token = await window.hihiCurrentUser.getIdToken();
+                            if (token) return `Bearer ${token}`;
+                        } catch (e) {
+                            console.warn('Không thể lấy Firebase Admin token:', e);
+                        }
+                    }
+                    return this.userPassword || '';
+                },
+
                 async uploadFileToCloud(file) {
-                    if (!this.isUnlocked) {
+                    if (!this.isUnlocked && !this.isAdminLoggedIn) {
                         this.showToast("Vui lòng mở khóa để upload file!", "error");
                         throw new Error("Unauthorized");
                     }
 
                     const formData = new FormData();
                     formData.append('file', file);
+                    const authHeader = await this.getAuthHeaderValue();
                     
                     try {
                         const response = await fetch(`${SERVER_URL}/upload-file`, {
                             method: 'POST',
-                            headers: { 'Authorization': this.userPassword },
+                            headers: { 'Authorization': authHeader },
                             body: formData
                         });
                         
                         const data = await response.json();
-                        if (data.success && data.url) {
+                        if (response.ok && data.success && data.url) {
                             return {
                                 url: data.url,
                                 fileName: data.fileName || file.name,
@@ -2458,24 +2497,25 @@ body {
                 },
 
                 async uploadImageToCloud(file) {
-                    if (!this.isUnlocked) {
+                    if (!this.isUnlocked && !this.isAdminLoggedIn) {
                         this.showToast("Vui lòng mở khóa để upload ảnh!", "error");
                         throw new Error("Unauthorized");
                     }
 
                     const formData = new FormData();
                     formData.append('image', file);
+                    const authHeader = await this.getAuthHeaderValue();
                     
                     try {
                         const response = await fetch(`${SERVER_URL}/upload-image`, {
                             method: 'POST',
-                            headers: { 'Authorization': this.userPassword },
+                            headers: { 'Authorization': authHeader },
                             body: formData
                         });
                         
                         const data = await response.json();
                         
-                        if (data.success) {
+                        if (response.ok && data.success) {
                             return data.url; 
                         } else {
                             throw new Error(data.error || 'Upload failed');
@@ -2499,16 +2539,21 @@ body {
                 // --- SYNC LOGIC (Updated) ---
                 async fetchAPI(endpoint, method = 'GET', body = null) {
                     try {
+                        const authHeader = await this.getAuthHeaderValue();
                         const options = {
                             method,
                             headers: { 
                                 'Content-Type': 'application/json',
-                                'Authorization': this.userPassword
+                                'Authorization': authHeader
                             }
                         };
                         if (body) options.body = JSON.stringify(body);
                         const response = await fetch(`${SERVER_URL}${endpoint}`, options);
-                        return await response.json();
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) {
+                            throw new Error(data?.error || `HTTP ${response.status}`);
+                        }
+                        return data;
                     } catch (error) {
                         console.error("API Error:", error);
                         throw error;
@@ -2782,12 +2827,22 @@ body {
                 // --- AUTH & HELPERS ---
                 async handleLockAction() {
                     if (this.isUnlocked) {
+                        if (this.isAdminLoggedIn && !this.userPassword) {
+                            this.showToast("Đã mở khóa tự động bằng tài khoản Admin — không cần nhập key khóa!", "success");
+                            return;
+                        }
                         if(confirm("Bạn có muốn khóa lại (Đăng xuất)?")) {
-                            this.isUnlocked = false;
                             this.userPassword = '';
                             localStorage.removeItem(KEY_AUTH);
-                            this.showReadModal = false;
-                            this.viewMode = 'active'; 
+                            if (this.isAdminLoggedIn) {
+                                this.isUnlocked = true;
+                                this.showToast("Đã xóa key khóa; vẫn giữ mở khóa qua tài khoản Admin.");
+                            } else {
+                                this.isUnlocked = false;
+                                this.showReadModal = false;
+                                this.viewMode = 'active';
+                            }
+                            this.refreshIcons();
                         }
                     } else {
                         const pass = prompt("Nhập mật khẩu truy cập:");
@@ -2917,7 +2972,7 @@ body {
                     return cat ? cat.subs : [];
                 },
                 openAddModal() {
-                    if(!this.isUnlocked) return this.showToast("Vui lòng mở khóa để đăng bài!", "error");
+                    if(!this.isUnlocked && !this.isAdminLoggedIn) return this.showToast("Vui lòng mở khóa để đăng bài!", "error");
                     this.isEditing = false;
                     this.selectedFile = null;
                     this.uploadPreview = null;
@@ -3142,8 +3197,9 @@ onAuthStateChanged(auth, async (user) => {
   const adminBadge = document.getElementById("hihiAdminBadge");
 
   if (user) {
-    const isAdmin = (user.email === HIHI_ADMIN_EMAIL);
+    const isAdmin = ((user.email || "").trim().toLowerCase() === HIHI_ADMIN_EMAIL.toLowerCase());
     window.hihiCurrentUser = user;
+    window.hihiIsAdmin = isAdmin;
     if (authBtn) authBtn.style.display = "none";
     if (userPill) userPill.style.display = "inline-flex";
     if (avatar && user.photoURL) avatar.src = user.photoURL;
@@ -3152,6 +3208,7 @@ onAuthStateChanged(auth, async (user) => {
     if (dropName) dropName.textContent = user.displayName || "Học viên";
     if (dropEmail) dropEmail.textContent = user.email || "";
     if (adminBadge) adminBadge.style.display = isAdmin ? "inline-block" : "none";
+    window.dispatchEvent(new CustomEvent("hihi-auth-changed", { detail: { user, isAdmin } }));
     try {
       const snap = await getDoc(doc(db, "hihi_leaderboard", user.uid));
       if (snap.exists()) {
@@ -3168,11 +3225,13 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     window.hihiCurrentUser = null;
     window.hihiCurrentUserData = null;
+    window.hihiIsAdmin = false;
     if (authBtn) authBtn.style.display = "inline-flex";
     if (userPill) userPill.style.display = "none";
     if (adminBadge) adminBadge.style.display = "none";
     if (dropName) dropName.textContent = "Khách";
     if (dropEmail) dropEmail.textContent = "Chưa đăng nhập";
+    window.dispatchEvent(new CustomEvent("hihi-auth-changed", { detail: { user: null, isAdmin: false } }));
   }
 });
 </script>
